@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis de Negocio · Agroquímicos Ecuador 2023–2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
+
+  :root {
+    --verde: #1a7a4a;
+    --verde-claro: #2fad68;
+    --verde-menta: #e6f5ed;
+    --tierra: #8b5e3c;
+    --tierra-claro: #f5ede5;
+    --amarillo: #f0c040;
+    --rojo: #d94f3a;
+    --azul: #2563a8;
+    --gris-oscuro: #1e1e1e;
+    --gris-medio: #4a4a4a;
+    --gris-claro: #f0f0ee;
+    --blanco: #ffffff;
+    --borde: #d8d8d4;
+    --font-display: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-display);
+    background: var(--gris-claro);
+    color: var(--gris-oscuro);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--verde);
+    color: white;
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    right: 80px; bottom: -80px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .header-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1.15;
+    max-width: 680px;
+    margin-bottom: 16px;
+  }
+  .header-sub {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.75);
+    font-weight: 300;
+    max-width: 560px;
+    margin-bottom: 32px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .header-stat {
+    border-left: 2px solid rgba(255,255,255,0.3);
+    padding-left: 14px;
+  }
+  .header-stat .big { font-size: 1.7rem; font-weight: 700; font-family: var(--font-mono); }
+  .header-stat .label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* NAV */
+  .nav {
+    background: var(--gris-oscuro);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a {
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px 16px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nav a:hover { color: white; border-color: var(--verde-claro); }
+
+  /* CONTAINER */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* SECTIONS */
+  .section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--borde);
+  }
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--verde);
+    font-weight: 600;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  .section h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+  }
+  .section-desc {
+    color: var(--gris-medio);
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+    max-width: 680px;
+    font-weight: 300;
+  }
+
+  /* KPI GRID */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi-card {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.verde::before { background: var(--verde); }
+  .kpi-card.tierra::before { background: var(--tierra); }
+  .kpi-card.azul::before { background: var(--azul); }
+  .kpi-card.amarillo::before { background: var(--amarillo); }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-medio); margin-bottom: 8px; }
+  .kpi-value { font-family: var(--font-mono); font-size: 1.8rem; font-weight: 600; color: var(--gris-oscuro); }
+  .kpi-sub { font-size: 12px; color: var(--gris-medio); margin-top: 4px; }
+  .kpi-trend { font-size: 12px; font-weight: 600; margin-top: 6px; }
+  .kpi-trend.up { color: var(--verde); }
+  .kpi-trend.down { color: var(--rojo); }
+
+  /* CHARTS */
+  .chart-wrap {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gris-medio);
+    margin-bottom: 16px;
+  }
+  .chart-container { position: relative; }
+
+  /* TWO COLUMNS */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* TABLE */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--borde);
+  }
+  .data-table th {
+    background: var(--gris-oscuro);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--borde);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:nth-child(even) td { background: var(--gris-claro); }
+  .data-table td.mono { font-family: var(--font-mono); font-size: 13px; }
+  .data-table td.highlight { color: var(--verde); font-weight: 600; }
+  .data-table td.red { color: var(--rojo); font-weight: 600; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-alto { background: #e6f5ed; color: var(--verde); }
+  .badge-bajo { background: #fdecea; color: var(--rojo); }
+  .badge-pred { background: #e8f0fc; color: var(--azul); }
+  .badge-warn { background: #fdf5e0; color: #8b6c00; }
+
+  /* BAR HORIZONTAL */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { font-size: 12px; color: var(--gris-medio); width: 160px; flex-shrink: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; background: var(--gris-claro); border-radius: 4px; height: 18px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; }
+  .bar-val { font-family: var(--font-mono); font-size: 11px; color: white; font-weight: 600; white-space: nowrap; }
+
+  /* INSIGHT CARDS */
+  .insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+  .insight-card {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid var(--verde);
+  }
+  .insight-card.warn { border-left-color: var(--amarillo); }
+  .insight-card.danger { border-left-color: var(--rojo); }
+  .insight-card.info { border-left-color: var(--azul); }
+  .insight-icon { font-size: 1.3rem; margin-bottom: 10px; }
+  .insight-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+  .insight-body { font-size: 0.85rem; color: var(--gris-medio); font-weight: 300; line-height: 1.5; }
+
+  /* RECOM */
+  .recom-list { list-style: none; }
+  .recom-list li {
+    background: white;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 18px 20px 18px 60px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .recom-list li::before {
+    content: attr(data-num);
+    position: absolute;
+    left: 18px; top: 18px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--verde);
+  }
+  .recom-list li .rtitle { font-weight: 700; margin-bottom: 4px; }
+  .recom-list li .rbody { font-size: 0.87rem; color: var(--gris-medio); font-weight: 300; }
+
+  /* SEASONAL STRIP */
+  .season-strip {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 4px;
+    margin: 20px 0;
+  }
+  .season-cell {
+    border-radius: 6px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .season-label { font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+  .season-val { font-family: var(--font-mono); font-size: 12px; }
+
+  /* FOOTER */
+  .footer {
+    background: var(--gris-oscuro);
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    margin-top: 48px;
+  }
+
+  /* PREDICTION TABLE */
+  .pred-table { display: grid; grid-template-columns: repeat(12,1fr); gap: 6px; margin-top: 16px; }
+  .pred-cell {
+    border-radius: 6px;
+    padding: 12px 6px;
+    text-align: center;
+    border: 1px solid var(--borde);
+    background: white;
+  }
+  .pred-cell.real { background: var(--verde-menta); border-color: var(--verde); }
+  .pred-cell.estimado { background: #e8f0fc; border-color: var(--azul); }
+  .pred-month { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--gris-medio); margin-bottom: 4px; }
+  .pred-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+  .pred-type { font-size: 9px; color: var(--gris-medio); margin-top: 2px; }
+
+  @media print {
+    .nav { display: none; }
+    .section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="container">
+    <div class="header-eyebrow">Informe de Ciencia de Datos · Negocio Agroquímico · Ecuador</div>
+    <h1>Análisis Integral de Ventas y Créditos<br>2023 – 2026</h1>
+    <div class="header-sub">
+      Análisis basado en datos reales de ventas al contado y crédito, estacionalidad agrícola ecuatoriana, 
+      comportamiento de clientes y proyección para el resto del 2026.
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="big">$1.08M</div>
+        <div class="label">Ventas Totales 2023–2025</div>
+      </div>
+      <div class="header-stat">
+        <div class="big">10,338</div>
+        <div class="label">Transacciones Analizadas</div>
+      </div>
+      <div class="header-stat">
+        <div class="big">$406K</div>
+        <div class="label">Proyección Total 2026</div>
+      </div>
+      <div class="header-stat">
+        <div class="big">22.6%</div>
+        <div class="label">Margen Promedio de Ganancia</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#desempeno">Desempeño Anual</a>
+  <a href="#estacionalidad">Estacionalidad</a>
+  <a href="#productos">Productos</a>
+  <a href="#clientes">Clientes</a>
+  <a href="#morosos">Morosos</a>
+  <a href="#prediccion">Predicción 2026</a>
+  <a href="#recomendaciones">Recomendaciones</a>
+</nav>
+
+<div class="container">
+
+<!-- ─────────────────── SECCIÓN 1: DESEMPEÑO ANUAL ─────────────────── -->
+<section class="section" id="desempeno">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Desempeño Anual del Negocio</h2>
+  </div>
+  <p class="section-desc">
+    Evolución de ventas totales (contado + crédito), ganancia neta y margen por año. 
+    El 2026 refleja solo los meses enero–junio registrados.
+  </p>
+
+  <div class="kpi-grid">
+    <div class="kpi-card verde">
+      <div class="kpi-label">Ventas 2023</div>
+      <div class="kpi-value">$88,110</div>
+      <div class="kpi-sub">Feb–Dic · Ganancia: $16,199</div>
+      <div class="kpi-trend">Margen: 18.4%</div>
+    </div>
+    <div class="kpi-card tierra">
+      <div class="kpi-label">Ventas 2024</div>
+      <div class="kpi-value">$419,096</div>
+      <div class="kpi-sub">Ene–Dic · Ganancia: $78,504</div>
+      <div class="kpi-trend up">↑ +375% vs 2023</div>
+    </div>
+    <div class="kpi-card azul">
+      <div class="kpi-label">Ventas 2025</div>
+      <div class="kpi-value">$430,644</div>
+      <div class="kpi-sub">Ene–Dic · Ganancia: $97,032</div>
+      <div class="kpi-trend up">↑ +2.7% vs 2024 · Margen: 22.5%</div>
+    </div>
+    <div class="kpi-card amarillo">
+      <div class="kpi-label">Ventas 2026 (Ene–Jun)</div>
+      <div class="kpi-value">$138,490</div>
+      <div class="kpi-sub">6 meses · Ganancia: $28,713</div>
+      <div class="kpi-trend">Proyección anual: $406K</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Ventas y Ganancia Anual (USD)</div>
+    <div class="chart-container" style="height:280px">
+      <canvas id="chartAnual"></canvas>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">Margen de Ganancia por Año (%)</div>
+      <div class="chart-container" style="height:200px">
+        <canvas id="chartMargen"></canvas>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Ventas Mensuales — Todos los Años</div>
+      <div class="chart-container" style="height:200px">
+        <canvas id="chartLineMensual"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="insight-icon">📈</div>
+      <div class="insight-title">Crecimiento Sostenido</div>
+      <div class="insight-body">El negocio creció 375% de 2023 a 2024, el mayor salto registrado. Esto indica que el negocio escaló fuertemente en crédito y nuevos clientes. En 2025 se mantuvo estable con mejor margen.</div>
+    </div>
+    <div class="insight-card info">
+      <div class="insight-icon">💡</div>
+      <div class="insight-title">Mejora del Margen en 2025</div>
+      <div class="insight-body">El margen subió de 18.7% en 2024 a 22.5% en 2025. Esto puede reflejar mejores precios de compra, eliminación de productos de bajo margen o mayor eficiencia en ventas directas.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">⚠️</div>
+      <div class="insight-title">2026: Ritmo Inferior al 2025</div>
+      <div class="insight-body">En los primeros 6 meses del 2026, las ventas son menores a los mismos meses del 2025. El 2025 tuvo un enero muy fuerte ($60K+) que este año fue de $38K. Hay que revisar qué cambió.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 2: ESTACIONALIDAD ─────────────────── -->
+<section class="section" id="estacionalidad">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Estacionalidad y Ciclo Agrícola Ecuatoriano</h2>
+  </div>
+  <p class="section-desc">
+    En Ecuador (zona Costa y zonas cacaoteras) el ciclo agrícola y el clima dictan cuándo compran los agricultores.
+    La zafra del Ingenio San Carlos (período de corte de caña) y la temporada de invierno son determinantes.
+  </p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Promedio de Ventas Mensual (todos los años disponibles) — USD</div>
+    <div class="chart-container" style="height:260px">
+      <canvas id="chartEstacional"></canvas>
+    </div>
+  </div>
+
+  <!-- Calendario visual -->
+  <div style="background:white;border:1px solid var(--borde);border-radius:8px;padding:24px;margin-bottom:20px;">
+    <div class="chart-title">Calendario de Temporadas — Negocio Agroquímico Ecuador</div>
+    <div class="season-strip" id="seasonStrip"></div>
+    <div style="display:flex;gap:24px;margin-top:14px;font-size:12px;flex-wrap:wrap;">
+      <span><span style="display:inline-block;width:12px;height:12px;background:#1a7a4a;border-radius:2px;margin-right:6px;"></span>Mes Alto (>$30K prom.)</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#f0c040;border-radius:2px;margin-right:6px;"></span>Mes Medio</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#d94f3a;border-radius:2px;margin-right:6px;"></span>Mes Bajo (<$18K prom.)</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#2563a8;border-radius:2px;margin-right:6px;"></span>Zafra San Carlos</span>
+    </div>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="insight-icon">🌧️</div>
+      <div class="insight-title">Invierno (Dic–Abr) = Ventas Altas</div>
+      <div class="insight-body">En la Costa ecuatoriana, el invierno (lluvia) va de diciembre a abril. Es la época en que los agricultores necesitan más herbicidas, fungicidas y fertilizantes. Enero y Noviembre-Diciembre son sus meses más fuertes.</div>
+    </div>
+    <div class="insight-card info">
+      <div class="insight-icon">🎋</div>
+      <div class="insight-title">Zafra Ingenio San Carlos (Jun–Nov)</div>
+      <div class="insight-body">La zafra del Ingenio San Carlos inicia aproximadamente en junio y termina en noviembre. Durante este período los cañicultores compran abono de caña, fertilizantes nitrogenados (urea, muriato) y herbicidas para caña. Esto explica los picos de octubre–noviembre.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">📉</div>
+      <div class="insight-title">Febrero: Mes Más Bajo del Año</div>
+      <div class="insight-body">Febrero tiene el promedio más bajo ($16,198 USD). Esto puede deberse a que los agricultores agotaron presupuesto en enero y el Carnaval reduce actividad comercial. Es el mes para revisar inventario y planificar compras.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🌱</div>
+      <div class="insight-title">Enero: Mes Estrella</div>
+      <div class="insight-body">Enero tiene el promedio más alto ($40,395). Los agricultores inician el año agrícola, hacen pedidos grandes de fertilizantes y abonos para cacao, banano y caña. Es el mes donde más se debe tener stock disponible.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 3: PRODUCTOS ─────────────────── -->
+<section class="section" id="productos">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Análisis de Productos</h2>
+  </div>
+  <p class="section-desc">
+    Ranking de productos por total vendido 2023–2026, y patrón estacional de los principales por mes.
+  </p>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">Top 10 Productos — Total Vendido (USD)</div>
+      <div id="barProductos"></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Distribución por Categoría de Producto</div>
+      <div class="chart-container" style="height:220px">
+        <canvas id="chartPie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">¿Qué Producto se Vende Más en Cada Mes?</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th>Temporada</th>
+          <th>Producto #1</th>
+          <th>Producto #2</th>
+          <th>Producto #3</th>
+          <th>Razón Principal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Enero</strong></td><td><span class="badge badge-alto">ALTO</span></td><td class="highlight">Cacao Pepa de Oro</td><td>Urea</td><td>Fertibon Cacao</td><td style="font-size:12px;color:#4a4a4a">Inicio año agrícola, plantaciones de cacao</td></tr>
+        <tr><td><strong>Febrero</strong></td><td><span class="badge badge-bajo">BAJO</span></td><td class="highlight">Urea</td><td>Fertibon Cacao</td><td>Cacao Pepa de Oro</td><td style="font-size:12px;color:#4a4a4a">Menor demanda, post-Carnaval</td></tr>
+        <tr><td><strong>Marzo</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Cacao Pepa de Oro</td><td>Muriato</td><td>Urea</td><td style="font-size:12px;color:#4a4a4a">Fin de invierno, preparación de suelos</td></tr>
+        <tr><td><strong>Abril</strong></td><td><span class="badge badge-alto">ALTO</span></td><td class="highlight">Fertibon Cacao</td><td>Leosil</td><td>Cacao Pepa de Oro</td><td style="font-size:12px;color:#4a4a4a">Temporada de abonado en cacaoteros</td></tr>
+        <tr><td><strong>Mayo</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Fertibon Cacao</td><td>Leosil Fino</td><td>Cacao Pepa de Oro</td><td style="font-size:12px;color:#4a4a4a">Transición, mantenimiento de cultivos</td></tr>
+        <tr><td><strong>Junio</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Ferti-Organ</td><td>Leosil Fino</td><td>Cacao Pepa de Oro</td><td style="font-size:12px;color:#4a4a4a">Inicio zafra San Carlos, herbicidas caña</td></tr>
+        <tr><td><strong>Julio</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Fertibon Cacao</td><td>Leosil Fino</td><td>Ferti-Organ</td><td style="font-size:12px;color:#4a4a4a">Zafra activa, abono de caña</td></tr>
+        <tr><td><strong>Agosto</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Leosil Fino</td><td>Fertibon Cacao</td><td>Cacao Pepa de Oro</td><td style="font-size:12px;color:#4a4a4a">Verano, necesidad de silicio y nutrición</td></tr>
+        <tr><td><strong>Septiembre</strong></td><td><span class="badge badge-alto">MEDIO</span></td><td class="highlight">Urea</td><td>Leosil Fino</td><td>Fertibon Cacao</td><td style="font-size:12px;color:#4a4a4a">Zafra en curso, fertilización nitrogenada</td></tr>
+        <tr><td><strong>Octubre</strong></td><td><span class="badge badge-alto">ALTO</span></td><td class="highlight">Leosil Fino</td><td>Fertibon Cacao</td><td>Urea</td><td style="font-size:12px;color:#4a4a4a">Pico zafra San Carlos, máxima demanda</td></tr>
+        <tr><td><strong>Noviembre</strong></td><td><span class="badge badge-alto">ALTO</span></td><td class="highlight">Fertibon Cacao</td><td>Leosil Granulado</td><td>Muriato</td><td style="font-size:12px;color:#4a4a4a">Fin zafra, preparación para invierno</td></tr>
+        <tr><td><strong>Diciembre</strong></td><td><span class="badge badge-alto">ALTO</span></td><td class="highlight">Urea</td><td>Fertibon Cacao</td><td>Leosil</td><td style="font-size:12px;color:#4a4a4a">Pre-invierno, stock para enero</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 4: CLIENTES ─────────────────── -->
+<section class="section" id="clientes">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Análisis de Clientes de Crédito</h2>
+  </div>
+  <p class="section-desc">
+    Clientes más frecuentes y de mayor valor. La frecuencia indica fidelidad; el volumen total indica importancia para el negocio.
+  </p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Top 10 Clientes — Frecuencia de Compra (Crédito)</div>
+    <div id="barClientes"></div>
+  </div>
+
+  <div class="chart-wrap" style="margin-top:16px">
+    <div class="chart-title">Top Clientes por Volumen Total Comprado (USD)</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Compras</th>
+          <th>Total USD</th>
+          <th>Perfil</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><strong>César Briones</strong></td><td class="mono">194 veces</td><td class="mono highlight">$10,194</td><td><span class="badge badge-alto">MUY FRECUENTE</span></td></tr>
+        <tr><td>2</td><td><strong>Antonio Guamán</strong></td><td class="mono">41 veces</td><td class="mono highlight">$9,479</td><td><span class="badge badge-alto">ALTO VALOR</span></td></tr>
+        <tr><td>3</td><td><strong>Magaly Guamán</strong></td><td class="mono">34 veces</td><td class="mono highlight">$7,456</td><td><span class="badge badge-alto">ALTO VALOR</span></td></tr>
+        <tr><td>4</td><td><strong>Mariana Castillo</strong></td><td class="mono">68 veces</td><td class="mono">$5,894</td><td><span class="badge badge-alto">FRECUENTE</span></td></tr>
+        <tr><td>5</td><td><strong>Pedro Sarmiento</strong></td><td class="mono">51 veces</td><td class="mono">$5,556</td><td><span class="badge badge-alto">FRECUENTE</span></td></tr>
+        <tr><td>6</td><td><strong>Jorge Alvarado</strong></td><td class="mono">101 veces</td><td class="mono">$3,731</td><td><span class="badge badge-alto">MUY FRECUENTE</span></td></tr>
+        <tr><td>7</td><td><strong>Fausto Montoya</strong></td><td class="mono">44 veces</td><td class="mono">$3,461</td><td><span class="badge badge-warn">SALDO PENDIENTE</span></td></tr>
+        <tr><td>8</td><td><strong>Susana Carranza</strong></td><td class="mono">47 veces</td><td class="mono">$3,162</td><td><span class="badge badge-alto">FRECUENTE</span></td></tr>
+        <tr><td>9</td><td><strong>Orlando Mera</strong></td><td class="mono">85 veces</td><td class="mono">$1,786</td><td><span class="badge badge-alto">FRECUENTE</span></td></tr>
+        <tr><td>10</td><td><strong>Santiago Haro</strong></td><td class="mono">59 veces</td><td class="mono">$1,469</td><td><span class="badge badge-alto">FRECUENTE</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card">
+      <div class="insight-icon">🥇</div>
+      <div class="insight-title">César Briones: Cliente #1 en Frecuencia</div>
+      <div class="insight-body">Con 194 transacciones, es el cliente más frecuente del negocio. Compra regularmente en pequeñas cantidades. Ideal para ofrecer tarjeta de fidelidad o descuento por volumen mensual.</div>
+    </div>
+    <div class="insight-card info">
+      <div class="insight-icon">💰</div>
+      <div class="insight-title">Antonio Guamán: Mayor Gasto por Visita</div>
+      <div class="insight-body">Con $9,479 en solo 41 visitas, tiene el ticket promedio más alto: $231 por transacción. Es un cliente de alto valor. Priorizar su atención y disponibilidad de productos que prefiere.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 5: MOROSOS ─────────────────── -->
+<section class="section" id="morosos">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Clientes con Saldo Pendiente (Cartera Vencida)</h2>
+  </div>
+  <p class="section-desc">
+    Clientes que tienen saldo sin cancelar en sus créditos. Estos representan dinero del negocio 
+    que aún no ha regresado. Monitorear y gestionar activamente.
+  </p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Saldo Pendiente por Cliente (USD) — Total Cartera: $5,682.25</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Saldo Pendiente</th>
+          <th>Total Comprado</th>
+          <th>% Sin Pagar</th>
+          <th>Riesgo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Manuel Carranza</strong></td><td class="mono red">$2,158.50</td><td class="mono">$3,148.50</td><td class="red">68.5%</td><td><span class="badge badge-bajo">⚠ CRÍTICO</span></td></tr>
+        <tr><td>2</td><td><strong>Fausto Montoya</strong></td><td class="mono red">$1,338.50</td><td class="mono">$1,768.00</td><td class="red">75.7%</td><td><span class="badge badge-bajo">⚠ CRÍTICO</span></td></tr>
+        <tr><td>3</td><td><strong>Luis Molina Once</strong></td><td class="mono">$283.00</td><td class="mono">$283.00</td><td class="red">100%</td><td><span class="badge badge-bajo">ALTO</span></td></tr>
+        <tr><td>4</td><td><strong>César Briones</strong></td><td class="mono">$282.50</td><td class="mono">$320.00</td><td>88.3%</td><td><span class="badge badge-warn">MEDIO</span></td></tr>
+        <tr><td>5</td><td><strong>Pedro Sarmiento</strong></td><td class="mono">$243.00</td><td class="mono">$260.00</td><td>93.5%</td><td><span class="badge badge-warn">MEDIO</span></td></tr>
+        <tr><td>6</td><td><strong>Mariana Castillo</strong></td><td class="mono">$239.00</td><td class="mono">$256.00</td><td>93.4%</td><td><span class="badge badge-warn">MEDIO</span></td></tr>
+        <tr><td>7</td><td><strong>Agustín Ramos</strong></td><td class="mono">$174.00</td><td class="mono">$174.00</td><td class="red">100%</td><td><span class="badge badge-bajo">ALTO</span></td></tr>
+        <tr><td>8</td><td><strong>Orlando Mera</strong></td><td class="mono">$163.75</td><td class="mono">$177.50</td><td>92.3%</td><td><span class="badge badge-warn">BAJO</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card danger">
+      <div class="insight-icon">🚨</div>
+      <div class="insight-title">Manuel Carranza: Deuda Crítica ($2,158)</div>
+      <div class="insight-body">Es el mayor moroso con $2,158 pendientes de $3,148 comprados (68%). Se recomienda detener el crédito inmediatamente hasta regularizar. Considerar acuerdo de pago en cuotas.</div>
+    </div>
+    <div class="insight-card danger">
+      <div class="insight-icon">🔴</div>
+      <div class="insight-title">Fausto Montoya: $1,338 sin Pagar</div>
+      <div class="insight-body">Debe el 75.7% de lo que ha comprado. Es cliente frecuente (44 visitas) pero con alto riesgo. Pausa inmediata de crédito y plan de cobro activo.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">📋</div>
+      <div class="insight-title">Cartera Total en Riesgo: $5,682</div>
+      <div class="insight-body">Esta deuda representa el dinero que no ha regresado al negocio. Implementar un sistema de límite de crédito por cliente y cobrar al inicio de cada mes antes de dar más mercadería.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 6: PREDICCIÓN 2026 ─────────────────── -->
+<section class="section" id="prediccion">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Predicción de Ventas — Julio a Diciembre 2026</h2>
+  </div>
+  <p class="section-desc">
+    Proyección basada en el comportamiento real de 2024 y 2025 para los mismos meses, 
+    aplicando tendencia de crecimiento moderado. Los meses reales ya registrados se muestran en verde.
+  </p>
+
+  <div style="background:white;border:1px solid var(--borde);border-radius:8px;padding:24px;margin-bottom:20px;">
+    <div class="chart-title">Proyección Mensual 2026 — Real vs Estimado (USD)</div>
+    <div class="pred-table" id="predTable"></div>
+    <div style="display:flex;gap:20px;margin-top:14px;font-size:12px;">
+      <span><span style="display:inline-block;width:12px;height:12px;background:#e6f5ed;border:1px solid #1a7a4a;border-radius:2px;margin-right:6px;"></span>Dato Real</span>
+      <span><span style="display:inline-block;width:12px;height:12px;background:#e8f0fc;border:1px solid #2563a8;border-radius:2px;margin-right:6px;"></span>Estimado</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Comparativo 2025 vs Proyección 2026 por Mes</div>
+    <div class="chart-container" style="height:280px">
+      <canvas id="chartPrediccion"></canvas>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card verde">
+      <div class="kpi-label">Total Real Ene–Jun 2026</div>
+      <div class="kpi-value">$138,490</div>
+      <div class="kpi-sub">6 meses registrados</div>
+    </div>
+    <div class="kpi-card azul">
+      <div class="kpi-label">Estimado Jul–Dic 2026</div>
+      <div class="kpi-value">$268,114</div>
+      <div class="kpi-sub">Proyección basada en 2024–2025</div>
+    </div>
+    <div class="kpi-card tierra">
+      <div class="kpi-label">Proyección Total 2026</div>
+      <div class="kpi-value">$406,604</div>
+      <div class="kpi-sub">↓ ~5.6% vs 2025 ($430K)</div>
+    </div>
+    <div class="kpi-card amarillo">
+      <div class="kpi-label">Mes Estimado Más Alto</div>
+      <div class="kpi-value">Octubre</div>
+      <div class="kpi-sub">Estimado: $63,947 — Pico zafra</div>
+    </div>
+  </div>
+
+  <div class="insight-grid">
+    <div class="insight-card info">
+      <div class="insight-icon">📊</div>
+      <div class="insight-title">Metodología de Predicción</div>
+      <div class="insight-body">Se calculó el crecimiento real entre el mismo mes de 2024 y 2025, luego se aplicó la raíz cuadrada de ese crecimiento al valor 2025 para proyectar 2026. Esto representa una estimación conservadora que considera que el crecimiento se modera.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-icon">🎯</div>
+      <div class="insight-title">Octubre: Mes Clave para Prepararse</div>
+      <div class="insight-body">Octubre 2026 está estimado en $63,947, el pico del año. Es la convergencia del final de zafra San Carlos con la preparación para el invierno. Asegure stock de Urea, Leosil Fino y Fertibon Cacao antes de septiembre.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────── SECCIÓN 7: RECOMENDACIONES ─────────────────── -->
+<section class="section" id="recomendaciones">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Recomendaciones Estratégicas</h2>
+  </div>
+  <p class="section-desc">
+    Acciones concretas basadas en el análisis de datos para mejorar ventas, rentabilidad y gestión de clientes.
+  </p>
+
+  <ul class="recom-list">
+    <li data-num="01">
+      <div class="rtitle">📦 Gestión de Stock por Estacionalidad</div>
+      <div class="rbody">Abastézcase de Fertibon Cacao, Leosil Fino y Urea antes de octubre, enero y noviembre — los meses de mayor demanda. Evite quedarse sin stock en estos meses pico. El margen en fertilizantes granulados es sólido; priorizarlos en meses altos maximiza ganancia.</div>
+    </li>
+    <li data-num="02">
+      <div class="rtitle">🎋 Alinearse con la Zafra del Ingenio San Carlos</div>
+      <div class="rbody">Julio a noviembre es la temporada de corte. Los cañicultores necesitan abono de caña, urea, muriato y herbicidas como Glifosato y Killer. Haga contacto con productores de caña en junio para anticipar pedidos y ofrecer precios por volumen durante la zafra.</div>
+    </li>
+    <li data-num="03">
+      <div class="rtitle">📋 Sistema Estricto de Crédito con Límites por Cliente</div>
+      <div class="rbody">Manuel Carranza ($2,158) y Fausto Montoya ($1,338) deben ser intervenidos de inmediato. Implemente un límite de crédito por cliente (ej: máximo $500) y exija pago antes de dar nueva mercadería. Esto protege su flujo de caja — $5,682 en cartera vencida es casi un mes de ganancia.</div>
+    </li>
+    <li data-num="04">
+      <div class="rtitle">🥇 Programa de Fidelización para Clientes Frecuentes</div>
+      <div class="rbody">César Briones (194 compras), Jorge Alvarado (101) y Orlando Mera (85) son sus clientes más fieles. Un descuento del 3–5% mensual si superan cierto monto, o un regalo de insumo pequeño por acumulación, puede aumentar su ticket promedio y fidelizarlos aún más.</div>
+    </li>
+    <li data-num="05">
+      <div class="rtitle">📉 Estrategia para Febrero — El Mes Muerto</div>
+      <div class="rbody">Febrero es consistentemente el mes más bajo. Use ese tiempo para: (1) hacer inventario y pedidos a proveedores, (2) visitar clientes potenciales en campo, (3) ofrecer descuentos en productos de menor rotación para limpiar stock. No descuente los productos de alta rotación.</div>
+    </li>
+    <li data-num="06">
+      <div class="rtitle">💡 Diversificar Hacia Productos Orgánicos</div>
+      <div class="rbody">Ferti-Organ y Biobon están creciendo en sus ventas, especialmente en 2025. El mercado de agroquímicos orgánicos en Ecuador está en expansión por certificaciones de exportación de cacao y banano. Considere ampliar su catálogo orgánico y contactar proveedores especializados.</div>
+    </li>
+    <li data-num="07">
+      <div class="rtitle">📱 Registro Digital de Clientes y Créditos</div>
+      <div class="rbody">El análisis de estos datos fue posible gracias a sus registros en Excel, pero se recomienda migrar a una aplicación simple de punto de venta (como SumUp o una app básica de créditos) para automatizar alertas de cobro, histórico de cliente y control de inventario en tiempo real.</div>
+    </li>
+    <li data-num="08">
+      <div class="rtitle">🎯 Meta 2026: Superar los $420K</div>
+      <div class="rbody">La proyección actual es $406K. Para superar el 2025 ($430K), necesita recuperar el ritmo perdido en enero–junio. Enfóquese en aumentar 15–20% las ventas en los meses de zafra (julio–noviembre) captando clientes cañicultores nuevos y reactivando clientes inactivos con llamada o visita de campo.</div>
+    </li>
+  </ul>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+  Informe generado con análisis de ciencia de datos · Datos reales 2023–2026 · Ecuador<br>
+  Análisis de 10,338 transacciones · Ventas Contado + Crédito · Actualizado Junio 2026
+</div>
+
+<script>
+// ─── DATA ───
+const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const mesesFull = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const avgMensual = [40395,16148,23366,29579,21932,22044,20336,26158,27355,30975,38387,31727];
+
+// ─── CHART 1: ANUAL ───
+new Chart(document.getElementById('chartAnual'), {
+  type: 'bar',
+  data: {
+    labels: ['2023', '2024', '2025', '2026 (real)'],
+    datasets: [
+      {
+        label: 'Ventas Totales ($)',
+        data: [88110, 419096, 430644, 138490],
+        backgroundColor: ['#2fad68','#1a7a4a','#2563a8','#f0c040'],
+        borderRadius: 6,
+        order: 1
+      },
+      {
+        label: 'Ganancia ($)',
+        data: [16199, 78504, 97032, 28713],
+        backgroundColor: ['rgba(47,173,104,0.25)','rgba(26,122,74,0.25)','rgba(37,99,168,0.25)','rgba(240,192,64,0.25)'],
+        borderRadius: 6,
+        order: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { font: { family: 'IBM Plex Sans', size: 12 } } } },
+    scales: {
+      y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K', font: { family: 'IBM Plex Mono', size: 11 } }, grid: { color: '#e8e8e4' } },
+      x: { grid: { display: false }, ticks: { font: { family: 'IBM Plex Sans', size: 12 } } }
+    }
+  }
+});
+
+// ─── CHART 2: MARGEN ───
+new Chart(document.getElementById('chartMargen'), {
+  type: 'bar',
+  data: {
+    labels: ['2023','2024','2025','2026'],
+    datasets: [{
+      label: 'Margen (%)',
+      data: [18.4, 18.7, 22.5, 20.7],
+      backgroundColor: ['#e6f5ed','#2fad68','#1a7a4a','#f0c040'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 0, max: 30, ticks: { callback: v => v + '%', font: { family: 'IBM Plex Mono', size: 11 } } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// ─── CHART 3: LÍNEA MENSUAL ───
+const lineData2024 = [21504,24706,34262,56164,29589,33985,17917,35241,31153,33742,47395,53439];
+const lineData2025 = [61538,22430,33098,29794,null,40208,31015,35832,42741,51674,51754,30590];
+const lineData2026r = [38144,16760,20567,26317,28886,7816,null,null,null,null,null,null];
+
+new Chart(document.getElementById('chartLineMensual'), {
+  type: 'line',
+  data: {
+    labels: meses,
+    datasets: [
+      { label: '2024', data: lineData2024, borderColor: '#8b5e3c', borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3 },
+      { label: '2025', data: lineData2025, borderColor: '#1a7a4a', borderWidth: 2, pointRadius: 3, fill: false, tension: 0.3 },
+      { label: '2026', data: lineData2026r, borderColor: '#f0c040', borderWidth: 2, pointRadius: 4, fill: false, tension: 0.3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 11 } } } },
+    scales: {
+      y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K', font: { family: 'IBM Plex Mono', size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ─── CHART 4: ESTACIONAL ───
+const colors = avgMensual.map(v => v >= 30000 ? '#1a7a4a' : v >= 18000 ? '#f0c040' : '#d94f3a');
+new Chart(document.getElementById('chartEstacional'), {
+  type: 'bar',
+  data: {
+    labels: mesesFull,
+    datasets: [{
+      label: 'Promedio Ventas Mensual ($)',
+      data: avgMensual,
+      backgroundColor: colors,
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => '$' + ctx.raw.toLocaleString() } }
+    },
+    scales: {
+      y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K', font: { family: 'IBM Plex Mono', size: 11 } }, grid: { color: '#e8e8e4' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ─── SEASON STRIP ───
+const seasonData = [
+  { mes: 'ENE', val: 40395, color: '#1a7a4a', textColor: 'white', nota: '🌧️' },
+  { mes: 'FEB', val: 16148, color: '#d94f3a', textColor: 'white', nota: '📉' },
+  { mes: 'MAR', val: 23366, color: '#f0c040', textColor: '#333', nota: '🌧️' },
+  { mes: 'ABR', val: 29579, color: '#1a7a4a', textColor: 'white', nota: '🌧️' },
+  { mes: 'MAY', val: 21932, color: '#f0c040', textColor: '#333', nota: '☀️' },
+  { mes: 'JUN', val: 22044, color: '#2563a8', textColor: 'white', nota: '🎋' },
+  { mes: 'JUL', val: 20336, color: '#2563a8', textColor: 'white', nota: '🎋' },
+  { mes: 'AGO', val: 26158, color: '#2563a8', textColor: 'white', nota: '🎋' },
+  { mes: 'SEP', val: 27355, color: '#2563a8', textColor: 'white', nota: '🎋' },
+  { mes: 'OCT', val: 30975, color: '#2563a8', textColor: 'white', nota: '🎋' },
+  { mes: 'NOV', val: 38387, color: '#1a7a4a', textColor: 'white', nota: '🌧️' },
+  { mes: 'DIC', val: 31727, color: '#1a7a4a', textColor: 'white', nota: '🌧️' },
+];
+const strip = document.getElementById('seasonStrip');
+seasonData.forEach(d => {
+  strip.innerHTML += `<div class="season-cell" style="background:${d.color};color:${d.textColor}">
+    <div class="season-label">${d.mes}</div>
+    <div style="font-size:16px">${d.nota}</div>
+    <div class="season-val">$${(d.val/1000).toFixed(0)}K</div>
+  </div>`;
+});
+
+// ─── PRODUCTOS BAR ───
+const productos = [
+  { name: 'Fertibon Cacao', val: 32051 },
+  { name: 'Urea', val: 26616 },
+  { name: 'Leosil Fino', val: 25487 },
+  { name: 'Cacao Pepa de Oro', val: 23695 },
+  { name: 'Muriato', val: 13999 },
+  { name: 'Leosil', val: 12884 },
+  { name: 'Biobon', val: 12098 },
+  { name: 'Leosil Granulado', val: 11691 },
+  { name: 'Ferti-Organ', val: 10703 },
+  { name: 'Cusamínz', val: 8756 },
+];
+const maxP = productos[0].val;
+const barColors = ['#1a7a4a','#2fad68','#2563a8','#8b5e3c','#f0c040','#1a7a4a','#2fad68','#2563a8','#8b5e3c','#f0c040'];
+let barHtml = '';
+productos.forEach((p, i) => {
+  const pct = (p.val / maxP * 100).toFixed(1);
+  barHtml += `<div class="bar-row">
+    <div class="bar-label" title="${p.name}">${p.name}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:${pct}%;background:${barColors[i]}">
+        <span class="bar-val">$${(p.val/1000).toFixed(1)}K</span>
+      </div>
+    </div>
+  </div>`;
+});
+document.getElementById('barProductos').innerHTML = barHtml;
+
+// ─── PIE CATEGORÍAS ───
+new Chart(document.getElementById('chartPie'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Fertilizantes', 'Herbicidas', 'Fungicidas/Insect.', 'Bioestimulantes', 'Otros'],
+    datasets: [{
+      data: [52, 21, 12, 10, 5],
+      backgroundColor: ['#1a7a4a','#d94f3a','#2563a8','#f0c040','#8b5e3c'],
+      borderWidth: 2, borderColor: 'white'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw + '%' } }
+    }
+  }
+});
+
+// ─── CLIENTES BAR ───
+const clientes = [
+  { name: 'César Briones', veces: 194 },
+  { name: 'Jorge Alvarado', veces: 101 },
+  { name: 'Orlando Mera', veces: 85 },
+  { name: 'Mariana Castillo', veces: 68 },
+  { name: 'Santiago Haro', veces: 59 },
+  { name: 'Pedro Sarmiento', veces: 51 },
+  { name: 'Susana Carranza', veces: 47 },
+  { name: 'Fausto Montoya', veces: 44 },
+  { name: 'Nino Criollo', veces: 49 },
+  { name: 'Renzo Vásquez', veces: 42 },
+];
+const maxC = 194;
+let cBarHtml = '';
+clientes.forEach((c, i) => {
+  const pct = (c.veces / maxC * 100).toFixed(1);
+  const col = i === 0 ? '#1a7a4a' : i === 7 ? '#f0c040' : '#2563a8';
+  cBarHtml += `<div class="bar-row">
+    <div class="bar-label" title="${c.name}">${c.name}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:${pct}%;background:${col}">
+        <span class="bar-val">${c.veces} compras</span>
+      </div>
+    </div>
+  </div>`;
+});
+document.getElementById('barClientes').innerHTML = cBarHtml;
+
+// ─── PREDICCIÓN TABLE ───
+const predData = [
+  { mes: 'Ene', val: 38144, tipo: 'real' },
+  { mes: 'Feb', val: 16760, tipo: 'real' },
+  { mes: 'Mar', val: 20567, tipo: 'real' },
+  { mes: 'Abr', val: 26317, tipo: 'real' },
+  { mes: 'May', val: 28886, tipo: 'real' },
+  { mes: 'Jun', val: 7816, tipo: 'real' },
+  { mes: 'Jul', val: 40747, tipo: 'estimado' },
+  { mes: 'Ago', val: 36131, tipo: 'estimado' },
+  { mes: 'Sep', val: 50064, tipo: 'estimado' },
+  { mes: 'Oct', val: 63947, tipo: 'estimado' },
+  { mes: 'Nov', val: 54081, tipo: 'estimado' },
+  { mes: 'Dic', val: 23144, tipo: 'estimado' },
+];
+const pt = document.getElementById('predTable');
+predData.forEach(p => {
+  pt.innerHTML += `<div class="pred-cell ${p.tipo}">
+    <div class="pred-month">${p.mes}</div>
+    <div class="pred-num">$${(p.val/1000).toFixed(1)}K</div>
+    <div class="pred-type">${p.tipo === 'real' ? '✓ Real' : '~ Est.'}</div>
+  </div>`;
+});
+
+// ─── PREDICCIÓN CHART ───
+const pred2025 = [61538, 22430, 33098, 29794, 33690, 40208, 31015, 35832, 42741, 51674, 51754, 30590];
+const pred2026 = [38144, 16760, 20567, 26317, 28886, 7816, 40747, 36131, 50064, 63947, 54081, 23144];
+
+new Chart(document.getElementById('chartPrediccion'), {
+  type: 'line',
+  data: {
+    labels: mesesFull,
+    datasets: [
+      {
+        label: '2025 (Real)',
+        data: pred2025,
+        borderColor: '#1a7a4a',
+        backgroundColor: 'rgba(26,122,74,0.08)',
+        borderWidth: 2.5, pointRadius: 4, fill: true, tension: 0.3
+      },
+      {
+        label: '2026 Real',
+        data: [38144,16760,20567,26317,28886,7816,null,null,null,null,null,null],
+        borderColor: '#f0c040',
+        borderWidth: 2.5, pointRadius: 5, fill: false, tension: 0.3
+      },
+      {
+        label: '2026 Estimado',
+        data: [null,null,null,null,null,7816,40747,36131,50064,63947,54081,23144],
+        borderColor: '#2563a8',
+        borderDash: [6, 4],
+        borderWidth: 2, pointRadius: 4, fill: false, tension: 0.3
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { family: 'IBM Plex Sans', size: 12 } } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': $' + (ctx.raw||0).toLocaleString() } }
+    },
+    scales: {
+      y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K', font: { family: 'IBM Plex Mono', size: 11 } }, grid: { color: '#e8e8e4' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
