@@ -3,863 +3,1273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escanea — escáner de documentos</title>
+<title>Agro Naranjito — Tu agroservicio de confianza</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-  // Debe existir ANTES de cargar opencv.js
-  var cvReady = false;
-  var Module = {
-    onRuntimeInitialized(){ cvReady = true; console.log('OpenCV.js listo'); }
-  };
-</script>
-<script async src="https://docs.opencv.org/4.x/opencv.js" onerror="console.warn('No se pudo cargar OpenCV.js, el recorte será manual')"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..800&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#12151b;
-    --paper:#f4f3ef;
-    --panel:#ffffff;
-    --steel:#5b6472;
-    --line:#e2e0d8;
-    --laser:#00c896;
-    --laser-dim:rgba(0,200,150,0.14);
-    --danger:#c4453a;
-    --radius:14px;
+    --cream:#F5F0E3;
+    --paper:#FCFAF3;
+    --forest:#1E3324;
+    --forest-2:#2C4A34;
+    --leaf:#5B8A57;
+    --orange:#E1611F;
+    --orange-dark:#B84B15;
+    --gold:#C99A3D;
+    --ink:#22271E;
+    --ink-soft:#5B6155;
+    --line:rgba(30,51,36,0.14);
+    --danger:#B5442A;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      repeating-linear-gradient(180deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px),
-      var(--paper);
+    background:var(--cream);
     color:var(--ink);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-    padding-bottom:110px;
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 40px;}
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  ::selection{background:var(--gold);color:var(--forest);}
 
-  header.app-header{
-    display:flex;align-items:flex-start;justify-content:space-between;
-    gap:16px;margin-bottom:26px;flex-wrap:wrap;
+  /* ---------- Topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    background:var(--forest);
+    color:var(--paper);
+    border-bottom:3px solid var(--orange);
   }
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand svg{width:42px;height:42px;flex-shrink:0;}
-  .brand h1{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:26px;font-weight:700;margin:0;letter-spacing:-0.01em;
+  .topbar-inner{
+    max-width:1180px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;gap:16px;
   }
-  .brand p{margin:2px 0 0;color:var(--steel);font-size:13.5px;}
-  .counter{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12.5px;color:var(--steel);
-    border:1px solid var(--line);
-    background:var(--panel);
-    padding:8px 12px;border-radius:10px;
-    white-space:nowrap;
-  }
-  .counter b{color:var(--ink);font-weight:600;}
-
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:20px;
-    margin-bottom:20px;
-  }
-
-  .action-row{display:flex;gap:10px;flex-wrap:wrap;}
-  .btn{
-    font-family:'IBM Plex Sans',sans-serif;
-    font-weight:600;font-size:14px;
-    border-radius:10px;border:1px solid var(--line);
-    padding:12px 16px;cursor:pointer;
-    display:flex;align-items:center;gap:8px;
-    background:var(--panel);color:var(--ink);
-    transition:transform .12s ease, border-color .12s ease, background .12s ease;
-  }
-  .btn svg{width:18px;height:18px;flex-shrink:0;}
-  .btn:hover{border-color:var(--ink);}
-  .btn:active{transform:scale(0.97);}
-  .btn.primary{
-    background:var(--ink);color:var(--paper);border-color:var(--ink);
-  }
-  .btn.primary:hover{background:#000;}
-  .btn.laser{
-    background:var(--laser);color:#04241c;border-color:var(--laser);
-  }
-  .btn.ghost{background:transparent;}
-  .btn:focus-visible{outline:2px solid var(--laser);outline-offset:2px;}
-  .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
-
-  .mode-row{
-    display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap;
-    padding-top:16px;border-top:1px dashed var(--line);
-  }
-  .mode-row .label{font-size:12.5px;color:var(--steel);font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
-  .segmented{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
-  .segmented button{
-    font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:500;
-    padding:9px 14px;border:none;background:var(--panel);color:var(--steel);cursor:pointer;
-    border-right:1px solid var(--line);
-  }
-  .segmented button:last-child{border-right:none;}
-  .segmented button.active{background:var(--ink);color:var(--paper);}
-
-  input[type=file]{display:none;}
-
-  .pages{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
-    gap:16px;
-  }
-  .empty-state{
-    text-align:center;padding:50px 20px;color:var(--steel);
-  }
-  .empty-state svg{width:56px;height:56px;opacity:.5;margin-bottom:10px;}
-  .empty-state p{font-size:14px;margin:4px 0;}
-  .empty-state .hint{font-family:'IBM Plex Mono',monospace;font-size:12px;}
-
-  .page-card{
-    position:relative;
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:10px;
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:var(--orange);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;flex-shrink:0;
     overflow:hidden;
-    box-shadow:0 1px 0 rgba(0,0,0,0.03), 0 6px 14px -10px rgba(0,0,0,0.25);
   }
-  .page-card .thumb-wrap{
-    aspect-ratio:3/4;overflow:hidden;background:#eee;position:relative;
+  .brand-mark img{
+    width:100%;height:100%;object-fit:cover;display:block;
   }
-  .page-card img{width:100%;height:100%;object-fit:cover;display:block;}
-  .page-index{
-    position:absolute;top:6px;left:6px;
-    background:rgba(18,21,27,0.78);color:#fff;
-    font-family:'IBM Plex Mono',monospace;font-size:11px;
-    padding:2px 7px;border-radius:6px;
+  .brand-text{line-height:1.1;}
+  .brand-text .name{font-family:'Fraunces',serif;font-weight:700;font-size:19px;}
+  .brand-text .tag{font-size:11px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;}
+  .nav-tabs{display:flex;gap:4px;background:rgba(255,255,255,0.08);padding:4px;border-radius:10px;}
+  .nav-tabs button{
+    border:none;background:transparent;color:var(--paper);
+    padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600;
+    opacity:.75;transition:.15s;
   }
-  .page-tools{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:7px 8px;background:var(--panel);border-top:1px solid var(--line);
+  .nav-tabs button.active{background:var(--orange);opacity:1;}
+  .nav-tabs button:hover{opacity:1;}
+  .cart-btn{
+    position:relative;background:transparent;border:1.5px solid rgba(255,255,255,0.35);
+    color:var(--paper);padding:9px 14px;border-radius:10px;font-size:14px;font-weight:600;
+    display:flex;align-items:center;gap:8px;transition:.15s;
   }
-  .page-tools button{
-    border:none;background:transparent;cursor:pointer;color:var(--steel);
-    padding:5px;border-radius:6px;display:flex;
-  }
-  .page-tools button:hover{color:var(--ink);background:var(--paper);}
-  .page-tools button.del:hover{color:var(--danger);}
-  .page-tools svg{width:16px;height:16px;}
-
-  /* scanning overlay (mejora de imagen) */
-  .scan-overlay{
-    position:fixed;inset:0;background:rgba(18,21,27,0.86);
-    display:none;align-items:center;justify-content:center;z-index:50;
-    flex-direction:column;gap:16px;
-  }
-  .scan-overlay.active{display:flex;}
-  .scan-stage{
-    position:relative;width:220px;height:290px;
-    background:#1c2028;border-radius:10px;overflow:hidden;
-    border:1px solid #2c3240;
-  }
-  .scan-stage img{width:100%;height:100%;object-fit:cover;opacity:.85;}
-  .scan-beam{
-    position:absolute;left:0;right:0;height:3px;
-    background:linear-gradient(90deg, transparent, var(--laser), transparent);
-    box-shadow:0 0 14px 3px var(--laser);
-    animation:sweep 1.35s ease-in-out infinite;
-  }
-  @keyframes sweep{
-    0%{top:0%;}
-    50%{top:96%;}
-    100%{top:0%;}
-  }
-  .scan-label{
-    font-family:'IBM Plex Mono',monospace;color:var(--laser);font-size:13px;letter-spacing:.04em;
+  .cart-btn:hover{border-color:var(--orange);background:rgba(225,97,31,.15);}
+  .cart-badge{
+    background:var(--orange);color:#fff;font-size:11px;font-weight:700;
+    min-width:19px;height:19px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 4px;
   }
 
-  /* crop modal (recorte de bordes) */
-  .crop-modal{
-    position:fixed;inset:0;background:rgba(10,12,16,0.94);
-    display:none;flex-direction:column;align-items:center;justify-content:center;
-    z-index:60;padding:20px;gap:16px;
-  }
-  .crop-modal.active{display:flex;}
-  .crop-header{
-    color:#e8e7e2;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
-    text-align:center;letter-spacing:.03em;max-width:420px;
-  }
-  .crop-header b{color:var(--laser);}
-  .crop-stage-wrap{
-    position:relative;
-    border-radius:8px;overflow:hidden;
-    box-shadow:0 12px 40px rgba(0,0,0,0.5);
-    touch-action:none;
-  }
-  .crop-stage-wrap canvas{display:block;}
-  .crop-stage-wrap svg{position:absolute;top:0;left:0;touch-action:none;}
-  .crop-poly{
-    fill:rgba(0,200,150,0.16);
-    stroke:var(--laser);
-    stroke-width:2.5;
-  }
-  .crop-handle{
-    fill:#fff;
-    stroke:var(--laser);
-    stroke-width:3;
-    cursor:grab;
-    touch-action:none;
-  }
-  .crop-handle:active{cursor:grabbing;}
-  .crop-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  /* ---------- Layout ---------- */
+  .view{max-width:1180px;margin:0 auto;padding:34px 22px 80px;}
+  .hidden{display:none !important;}
 
-  /* bottom bar */
-  .bottom-bar{
-    position:fixed;left:0;right:0;bottom:0;
-    background:var(--panel);border-top:1px solid var(--line);
-    padding:14px 20px;
-    display:flex;align-items:center;justify-content:center;gap:14px;
-    box-shadow:0 -8px 24px rgba(0,0,0,0.05);
+  /* ---------- Hero (advisor intro) ---------- */
+  .hero{
+    background:var(--forest);
+    color:var(--paper);
+    border-radius:20px;
+    padding:38px 34px;
+    margin-bottom:26px;
+    position:relative;overflow:hidden;
   }
-  .bottom-bar .info{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--steel);}
+  .hero::after{
+    content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+    background:radial-gradient(circle, rgba(225,97,31,0.35), transparent 70%);
+  }
+  .hero .eyebrow{
+    color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:10px;
+  }
+  .hero h1{font-size:clamp(24px,3.4vw,34px);max-width:640px;margin:0 0 10px;position:relative;}
+  .hero p{color:#D8DDD1;max-width:560px;font-size:15px;line-height:1.55;margin:0;position:relative;}
 
-  @media (max-width:520px){
-    .brand h1{font-size:22px;}
-    .action-row{flex-direction:column;}
-    .action-row .btn{width:100%;justify-content:center;}
+  /* ---------- Chat ---------- */
+  .chat-wrap{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:18px;
+    display:flex;flex-direction:column;
+    min-height:420px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.02);
+  }
+  .chat-log{flex:1;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;max-height:520px;}
+  .msg{max-width:78%;padding:12px 16px;border-radius:14px;font-size:14.5px;line-height:1.55;}
+  .msg.user{align-self:flex-end;background:var(--forest);color:var(--paper);border-bottom-right-radius:4px;}
+  .msg.bot{align-self:flex-start;background:#EFE9D8;color:var(--ink);border-bottom-left-radius:4px;}
+  .msg.bot.typing{display:flex;gap:5px;align-items:center;padding:14px 16px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:pulse 1.1s infinite ease-in-out;}
+  .dot:nth-child(2){animation-delay:.15s;} .dot:nth-child(3){animation-delay:.3s;}
+  @keyframes pulse{0%,80%,100%{opacity:.25;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
+
+  .rec-cards{display:flex;flex-direction:column;gap:10px;margin-top:2px;}
+  .rec-card{
+    background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--orange);
+    border-radius:12px;padding:13px 15px;display:flex;justify-content:space-between;gap:12px;align-items:center;
+  }
+  .rec-card .rc-info .rc-name{font-weight:700;font-size:14.5px;}
+  .rec-card .rc-info .rc-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .rec-card .rc-info .rc-why{font-size:12.5px;color:var(--forest-2);margin-top:5px;line-height:1.4;}
+  .rec-card .rc-price{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--orange-dark);white-space:nowrap;}
+  .add-btn{
+    background:var(--forest);color:var(--paper);border:none;padding:9px 14px;border-radius:9px;
+    font-size:13px;font-weight:700;white-space:nowrap;transition:.15s;
+  }
+  .add-btn:hover{background:var(--orange);}
+  .add-btn.added{background:var(--leaf);}
+
+  .chat-input-row{
+    border-top:1px solid var(--line);padding:14px 16px;display:flex;gap:10px;background:var(--cream);
+    border-radius:0 0 18px 18px;
+  }
+  .chat-input-row textarea{
+    flex:1;resize:none;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;
+    font-family:inherit;font-size:14px;background:var(--paper);color:var(--ink);min-height:46px;max-height:120px;
+  }
+  .chat-input-row textarea:focus{outline:none;border-color:var(--orange);}
+  .send-btn{
+    background:var(--orange);color:#fff;border:none;border-radius:12px;padding:0 20px;font-weight:700;font-size:14px;
+    flex-shrink:0;transition:.15s;
+  }
+  .send-btn:hover{background:var(--orange-dark);}
+  .send-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .quick-prompts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .qp{
+    border:1.5px solid var(--line);background:var(--paper);color:var(--forest-2);
+    padding:8px 13px;border-radius:999px;font-size:12.5px;font-weight:600;transition:.15s;
+  }
+  .qp:hover{border-color:var(--orange);color:var(--orange-dark);}
+
+  /* ---------- Catalog ---------- */
+  .cat-header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .cat-header h2{font-size:26px;margin:0;}
+  .cat-controls{display:flex;gap:10px;flex-wrap:wrap;}
+  .search-box{
+    border:1.5px solid var(--line);background:var(--paper);border-radius:11px;
+    padding:10px 14px;font-size:14px;min-width:230px;
+  }
+  .search-box:focus{outline:none;border-color:var(--orange);}
+  select.filter{
+    border:1.5px solid var(--line);background:var(--paper);border-radius:11px;
+    padding:10px 12px;font-size:13.5px;color:var(--ink);
+  }
+  .cat-count{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+
+  .product-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;
+  }
+  .product-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    display:flex;flex-direction:column;transition:.15s;
+  }
+  .product-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:0 8px 20px rgba(30,51,36,0.08);}
+  .product-photo{
+    height:150px;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--forest-2);position:relative;
+    overflow:hidden;
+  }
+  .product-photo img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:10px;background:#fff;
+  }
+  .cat-tag{
+    position:absolute;top:9px;left:9px;background:rgba(30,51,36,0.85);color:#fff;
+    font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;letter-spacing:.02em;z-index:2;
+  }
+  .stock-tag{
+    position:absolute;top:9px;right:9px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;
+    background:rgba(255,255,255,0.9);z-index:2;
+  }
+  .stock-tag.low{color:var(--orange-dark);}
+  .stock-tag.out{color:var(--danger);}
+  .stock-tag.ok{color:var(--leaf);}
+  .product-body{padding:13px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1;}
+  .product-name{font-weight:700;font-size:14px;line-height:1.3;min-height:36px;}
+  .product-company{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;}
+  .product-foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px;}
+  .product-price{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--orange-dark);font-size:15px;}
+  .mini-add{
+    background:var(--forest);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;
+  }
+  .mini-add:hover{background:var(--orange);}
+  .mini-add:disabled{background:#B9B29A;cursor:not-allowed;}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+
+  /* ---------- Cart drawer ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,26,17,0.45);z-index:49;opacity:0;pointer-events:none;transition:.2s;
+  }
+  .overlay.show{opacity:1;pointer-events:auto;}
+  .cart-drawer{
+    position:fixed;top:0;right:0;height:100%;width:380px;max-width:92vw;background:var(--paper);
+    z-index:50;box-shadow:-8px 0 30px rgba(0,0,0,0.15);
+    transform:translateX(100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;
+  }
+  .cart-drawer.show{transform:translateX(0);}
+  .cart-head{
+    padding:20px 20px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;
+    background:var(--forest);color:var(--paper);
+  }
+  .cart-head h3{margin:0;font-size:19px;}
+  .close-btn{background:transparent;border:none;color:var(--paper);font-size:22px;line-height:1;padding:2px 6px;}
+  .cart-items{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:12px;}
+  .cart-empty{text-align:center;color:var(--ink-soft);padding:50px 10px;font-size:14px;}
+  .cart-item{display:flex;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px;}
+  .ci-info{flex:1;}
+  .ci-name{font-weight:700;font-size:13.5px;line-height:1.3;}
+  .ci-price{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--orange-dark);margin-top:3px;}
+  .ci-qty{display:flex;align-items:center;gap:8px;margin-top:7px;}
+  .qty-btn{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);background:var(--cream);font-weight:700;font-size:13px;}
+  .qty-val{font-size:13px;font-weight:600;min-width:16px;text-align:center;}
+  .ci-remove{background:transparent;border:none;color:var(--danger);font-size:12px;font-weight:600;text-decoration:underline;padding:0;}
+  .cart-foot{border-top:1px solid var(--line);padding:16px 20px 20px;background:var(--cream);}
+  .cart-total-row{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-bottom:14px;}
+  .cart-total-row .val{font-family:'IBM Plex Mono',monospace;color:var(--orange-dark);}
+  .wa-btn{
+    width:100%;background:#25D366;color:#fff;border:none;border-radius:12px;padding:14px;
+    font-weight:700;font-size:14.5px;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .wa-btn:hover{background:#1EBE59;}
+  .wa-btn:disabled{background:#B9B29A;cursor:not-allowed;}
+  .cart-note{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:9px;line-height:1.4;}
+
+  footer{text-align:center;padding:26px;color:var(--ink-soft);font-size:12.5px;}
+
+  /* ---------- Modal de detalle de producto ---------- */
+  .product-modal{
+    position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+    padding:20px;opacity:0;pointer-events:none;transition:.2s;
+  }
+  .product-modal.show{opacity:1;pointer-events:auto;}
+  .product-modal .pm-overlay{
+    position:absolute;inset:0;background:rgba(20,26,17,0.55);
+  }
+  .pm-panel{
+    position:relative;background:var(--paper);border-radius:20px;max-width:460px;width:100%;
+    max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);
+    transform:translateY(14px);transition:transform .2s ease;
+  }
+  .product-modal.show .pm-panel{transform:translateY(0);}
+  .pm-photo{
+    height:300px;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:56px;color:var(--forest-2);
+    position:relative;overflow:hidden;border-radius:20px 20px 0 0;
+  }
+  .pm-photo img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:18px;background:#fff;cursor:zoom-in;
+  }
+  .pm-photo .pm-icon-fallback{font-size:64px;}
+  .pm-zoom-hint{
+    position:absolute;bottom:10px;right:12px;background:rgba(20,26,17,0.65);color:#fff;
+    font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;z-index:2;
+    display:flex;align-items:center;gap:5px;pointer-events:none;
+  }
+  .pm-close{
+    position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;
+    background:rgba(20,26,17,0.55);color:#fff;border:none;font-size:19px;line-height:1;
+    display:flex;align-items:center;justify-content:center;z-index:2;
+  }
+  .pm-close:hover{background:var(--orange);}
+  .pm-cat-tag{
+    position:absolute;top:12px;left:12px;background:rgba(30,51,36,0.85);color:#fff;
+    font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;z-index:2;
+  }
+  .pm-body{padding:22px 24px 24px;display:flex;flex-direction:column;gap:14px;}
+  .pm-name{font-family:'Fraunces',serif;font-weight:700;font-size:21px;line-height:1.25;}
+  .pm-company{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .pm-stock{display:inline-flex;width:fit-content;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:#EFE9D8;}
+  .pm-stock.low{color:var(--orange-dark);}
+  .pm-stock.out{color:var(--danger);}
+  .pm-stock.ok{color:var(--leaf);}
+  .pm-desc{font-size:14px;line-height:1.6;color:var(--ink);}
+  .pm-qty-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;}
+  .pm-qty-label{font-weight:700;font-size:14px;}
+  .pm-qty-controls{display:flex;align-items:center;gap:10px;}
+  .pm-qty-btn{
+    width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line);background:var(--cream);
+    font-weight:700;font-size:16px;
+  }
+  .pm-qty-btn:hover{border-color:var(--orange);color:var(--orange-dark);}
+  .pm-qty-val{font-size:16px;font-weight:700;min-width:26px;text-align:center;}
+  .pm-add-btn{
+    width:100%;background:var(--forest);color:var(--paper);border:none;border-radius:12px;padding:14px;
+    font-weight:700;font-size:14.5px;transition:.15s;
+  }
+  .pm-add-btn:hover{background:var(--orange);}
+  .pm-add-btn:disabled{background:#B9B29A;cursor:not-allowed;}
+  .pm-add-btn.added{background:var(--leaf);}
+
+  /* ---------- Lightbox de imagen a pantalla completa ---------- */
+  .lightbox{
+    position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+    background:rgba(10,14,8,0.92);opacity:0;pointer-events:none;transition:.2s;padding:30px;
+  }
+  .lightbox.show{opacity:1;pointer-events:auto;}
+  .lightbox img{
+    max-width:min(90vw,900px);max-height:85vh;object-fit:contain;border-radius:10px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lightbox-close{
+    position:absolute;top:22px;right:26px;width:40px;height:40px;border-radius:50%;
+    background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.35);
+    font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;
+  }
+  .lightbox-close:hover{background:var(--orange);border-color:var(--orange);}
+
+  /* ---------- Chips de aclaración (bot no entendió) ---------- */
+  .clarify-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;align-self:flex-start;max-width:84%;}
+  .clarify-chip{
+    border:1.5px solid var(--line);background:var(--paper);color:var(--forest-2);
+    padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;transition:.15s;
+  }
+  .clarify-chip:hover{border-color:var(--orange);color:var(--orange-dark);background:#FBF3E7;}
+
+  @media(max-width:640px){
+    .topbar-inner{flex-wrap:wrap;}
+    .nav-tabs{order:3;width:100%;}
+    .hero{padding:26px 20px;}
   }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <header class="app-header">
+<div class="topbar">
+  <div class="topbar-inner">
     <div class="brand">
-      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="10" width="30" height="26" rx="2.5" stroke="#12151b" stroke-width="2.2"/>
-        <path d="M12 18h18M12 24h18M12 30h11" stroke="#12151b" stroke-width="2.2" stroke-linecap="round"/>
-        <rect x="4" y="6" width="34" height="4" rx="2" fill="#00c896"/>
-      </svg>
+      <div class="brand-mark"><img src="AgroNaranjito.png" alt="Agro Naranjito"></div>
+      <div class="brand-text">
+        <div class="name">Agro Naranjito</div>
+        <div class="tag">Agroservicio</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button id="tab-advisor" class="active">Asesor IA</button>
+      <button id="tab-catalog">Catálogo</button>
+    </div>
+    <button class="cart-btn" id="open-cart">
+      🛒 Carrito <span class="cart-badge" id="cart-badge">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- ADVISOR VIEW -->
+<div class="view" id="view-advisor">
+  <div class="hero">
+    <div class="eyebrow">Asesor agrícola con inteligencia artificial</div>
+    <h1>Cuéntanos qué le pasa a tu cultivo y te recomendamos el producto exacto</h1>
+    <p>Describe los síntomas: manchas, plagas, hojas amarillas, malezas, falta de floración, etc. Nuestro asesor revisa el inventario real de Agro Naranjito y te sugiere el producto más adecuado para que lo agregues directo al carrito.</p>
+  </div>
+
+  <div class="chat-wrap">
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input-row">
+      <textarea id="chat-input" placeholder="Ej: Mi planta de cacao tiene hojas con manchas negras y se están cayendo..." rows="1"></textarea>
+      <button class="send-btn" id="send-btn">Enviar</button>
+    </div>
+  </div>
+
+  <div class="quick-prompts">
+    <button class="qp" data-q="Mis plantas tienen hongos y manchas en las hojas, ¿qué me recomiendan?">🍂 Hongos en hojas</button>
+    <button class="qp" data-q="Tengo mucha maleza en el terreno y necesito eliminarla">🌾 Control de maleza</button>
+    <button class="qp" data-q="Veo insectos y plagas comiéndose las hojas de mi cultivo">🐛 Plagas e insectos</button>
+    <button class="qp" data-q="Mi planta se ve amarilla y débil, necesita nutrientes">💛 Planta amarilla / débil</button>
+    <button class="qp" data-q="Necesito que mi cultivo florezca y llene más fruto">🌸 Floración y engrose</button>
+  </div>
+</div>
+
+<!-- CATALOG VIEW -->
+<div class="view hidden" id="view-catalog">
+  <div class="cat-header">
+    <h2>Catálogo completo</h2>
+    <div class="cat-controls">
+      <input type="text" class="search-box" id="search-box" placeholder="Buscar producto o marca...">
+      <select class="filter" id="filter-cat"></select>
+    </div>
+  </div>
+  <div class="cat-count" id="cat-count"></div>
+  <div class="product-grid" id="product-grid"></div>
+</div>
+
+<footer>Agro Naranjito · Pedidos vía WhatsApp al 0939 079 441 · Precios sujetos a disponibilidad</footer>
+
+<div class="overlay" id="overlay"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-head">
+    <h3>Tu carrito</h3>
+    <button class="close-btn" id="close-cart">&times;</button>
+  </div>
+  <div class="cart-items" id="cart-items"></div>
+  <div class="cart-foot">
+    <div class="cart-total-row"><span>En tu pedido</span><span class="val" id="cart-total">0 productos</span></div>
+    <button class="wa-btn" id="checkout-btn" disabled>📲 Pedir por WhatsApp</button>
+    <div class="cart-note">Te enviaremos el precio y confirmación de stock por WhatsApp al momento de atender tu pedido.</div>
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL MODAL -->
+<div class="product-modal" id="product-modal">
+  <div class="pm-overlay" id="pm-overlay"></div>
+  <div class="pm-panel">
+    <div class="pm-photo" id="pm-photo">
+      <span class="pm-cat-tag" id="pm-cat-tag"></span>
+      <button class="pm-close" id="pm-close">&times;</button>
+    </div>
+    <div class="pm-body">
       <div>
-        <h1>Escanea</h1>
-        <p>Foto o PDF → recorte automático de bordes → PDF nítido</p>
+        <div class="pm-name" id="pm-name"></div>
+        <div class="pm-company" id="pm-company"></div>
       </div>
-    </div>
-    <div class="counter"><b id="pageCount">0</b> página(s) en la pila</div>
-  </header>
-
-  <div class="panel">
-    <div class="action-row">
-      <button class="btn primary" id="btnCamera">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-2h7l1 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        Tomar foto
-      </button>
-      <button class="btn" id="btnImages">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="8" cy="9" r="1.5"/></svg>
-        Subir imágenes
-      </button>
-      <button class="btn" id="btnPdf">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/></svg>
-        Subir PDF
-      </button>
-      <input type="file" id="cameraInput" accept="image/*" capture="environment">
-      <input type="file" id="imageInput" accept="image/*" multiple>
-      <input type="file" id="pdfInput" accept="application/pdf">
-    </div>
-
-    <div class="mode-row">
-      <span class="label">MODO DE ESCANEO</span>
-      <div class="segmented" id="modeSeg">
-        <button data-mode="color" class="active">Color</button>
-        <button data-mode="gray">Escala de grises</button>
-        <button data-mode="bn">Blanco y negro</button>
+      <div class="pm-stock" id="pm-stock"></div>
+      <div class="pm-desc" id="pm-desc"></div>
+      <div class="pm-qty-row">
+        <span class="pm-qty-label">Cantidad</span>
+        <div class="pm-qty-controls">
+          <button class="pm-qty-btn" id="pm-qty-dec">−</button>
+          <span class="pm-qty-val" id="pm-qty-val">1</span>
+          <button class="pm-qty-btn" id="pm-qty-inc">+</button>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="pages" id="pages"></div>
-    <div class="empty-state" id="emptyState">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
-      <p>Todavía no hay páginas.</p>
-      <p class="hint">Toma una foto o sube imágenes/PDF para empezar</p>
+      <button class="pm-add-btn" id="pm-add-btn">Agregar al carrito</button>
     </div>
   </div>
 </div>
 
-<div class="bottom-bar">
-  <span class="info" id="bottomInfo">0 páginas listas</span>
-  <button class="btn laser" id="btnDownload" disabled>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/></svg>
-    Descargar PDF
-  </button>
-</div>
-
-<!-- overlay de mejora de imagen -->
-<div class="scan-overlay" id="scanOverlay">
-  <div class="scan-stage">
-    <img id="scanPreviewImg" src="" alt="">
-    <div class="scan-beam"></div>
-  </div>
-  <div class="scan-label" id="scanLabel">MEJORANDO IMAGEN…</div>
-</div>
-
-<!-- modal de recorte de bordes -->
-<div class="crop-modal" id="cropModal">
-  <div class="crop-header" id="cropHeader">Ajusta las esquinas del documento y confirma el recorte</div>
-  <div class="crop-stage-wrap" id="cropStageWrap">
-    <canvas id="cropDisplayCanvas"></canvas>
-    <svg id="cropSvg"></svg>
-  </div>
-  <div class="crop-actions">
-    <button class="btn ghost" id="btnCropFull" style="color:#e8e7e2;border-color:#3a4150;">Usar imagen completa</button>
-    <button class="btn laser" id="btnCropConfirm">Confirmar recorte</button>
-  </div>
+<!-- FULLSCREEN IMAGE LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close">&times;</button>
+  <img id="lightbox-img" src="" alt="">
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+/* ======================= DATA ======================= */
+const RAW = [
+["PAMEX 500ML","SOLVESA",6.5,10,"2027-07-01"],
+["YARA VITA 1L","SOLVESA",13,3,"2025-03-18"],
+["INDUCFLOR 500ML","ESLABON",7,17,"2028-10-20"],
+["ZEANITRO 1L","ESLABON",13.25,3,"2028-03-14"],
+["SACO UREA","LA COLINA",36,0,null],
+["QUIMIFOL 600","QSI",12,0,null],
+["SEMILLA MELON","AGRO-SAD",2,6,null],
+["GREEN MASTER 250ML","NEREAGRO",4,6,"2027-01-01"],
+["SACO FULL-CACAO","AGRO-ORGANICO",18,17,null],
+["LABIN LABICUAJE 500G","AGRO-SAD",6.5,2,"2030-07-01"],
+["CABALLO DE TROYA 1L","ESLABON",26,8,null],
+["ANGLO QUAT","Agro Naranjito",5,11,"2027-09-21"],
+["KAÑON 250ML","AGRO-PROECO",5,15,null],
+["CREOLINA 500ML","AGRO-SAD",5,4,"2027-06-01"],
+["FUNGIL FUNGICIDA 400ML","AGRO-PROECO",7,8,"2027-02-26"],
+["SACO SULFATO GRUESO","SOLVESA",24,9,null],
+["COMBO FLORACION COMPLETO","NEREAGRO",19,4,null],
+["FUNDA DE PEPA DE ORO","BIOFERTICROP",0.35,0,null],
+["SEICAN 500ML","AGRO-SAD",14,7,null],
+["NAIROBI 250ML","AGRO-SAD",15,10,"2027-03-19"],
+["KILLER GALON","SOLVESA",18,5,"2026-11-12"],
+["OLIGOMIX 100G","QSI",4.5,5,"2027-04-01"],
+["BIOBONB GALON","ESLABON",58,2,"2028-12-18"],
+["SEMILLA DE PIMIENTO","AGRO-SAD",3.5,4,null],
+["CANECA GLIFOSATO","AGRO-SAD",80,1,null],
+["MOSKITION 100G","AGRO-SAD",1.75,0,null],
+["SACO YARAMILA","Agro Naranjito",62,0,null],
+["LABIN RAIZ","AGRO-SAD",8,0,"2025-04-01"],
+["PROMET CALCIO 500ML","QSI",10.5,0,"2025-01-01"],
+["HACHA-ROSS 1L","SOLVESA",9,1,"2026-11-11"],
+["TRIPLEXAC GALON","AGRO-ORGANICO",35,2,"2028-12-18"],
+["PANTANAL 1L","SOLVESA",10,3,"2025-11-19"],
+["ATTAMIX 500G","SOLVESA",5,1,"2027-08-01"],
+["COMBO COMPLEMENTO","AGRO-ORGANICO",21,0,null],
+["ADHESIX 100ML","ESLABON",3.5,28,"2029-05-14"],
+["BASTNATE GALON","SOLVESA",25,4,"2026-09-11"],
+["PH CHECK 1L","AGRO-SAD",10,5,"2027-12-01"],
+["HIGHP 200ML","ESLABON",6,7,null],
+["GLIFOSATO GALON","AGRO-SAD",18,1,"2027-12-12"],
+["CANECA CHACAL","SOLVESA",120,1,null],
+["PROMET BORO 250CC","QSI",6,2,"2025-04-01"],
+["EKOTRON-40","QSI",15,2,null],
+["CYTOKIN 1L","PEDRO BAYAS",34.5,2,null],
+["KOPERCUP 500G","AGRO-SAD",9.5,6,null],
+["GATILLER 1L","ESLABON",16.25,15,"2028-07-17"],
+["XSTRATA GOLD 250ML","AGRO-SAD",12,1,"2026-04-04"],
+["SACO KSIL","ESLABON",39,19,null],
+["ARRASADOR GALON","SOLVESA",25,2,null],
+["INDUCPRO MAGNESIO 1L","ESLABON",16.25,10,null],
+["METRINEX 50 EQ 1L","SOLVESA",8,8,"2027-01-18"],
+["RONDO GALON","PEDRO BAYAS",25,4,null],
+["CUSAMIZN 500ML","ESLABON",14.5,22,"2028-09-20"],
+["FERTI-ORGAN GALON","AGRO-ORGANICO",21,7,"2028-05-05"],
+["ESLABON RAIZ 500ML","ESLABON",9.5,17,"2028-03-01"],
+["FUNDA DE BLAUKOR 1L","Agro Naranjito",0.9,62,null],
+["DOMINAL 500ML","SOLVESA",18,16,"2027-08-01"],
+["TERIGRAN GALON","SOLVESA",35,0,"2027-01-03"],
+["MATASEC 500G","AGRO-SAD",5,0,"2026-07-01"],
+["BOQUILLA ROJA","SOLVESA",1.5,8,null],
+["LABICUPER-FUNGICIDA 500ML","AGRO-SAD",13,7,"2029-07-07"],
+["SULFATO DE 10 LIBRAS","Agro Naranjito",0.35,65,null],
+["HIGHP 500ML","ESLABON",11,13,null],
+["MOSKITION 250G","AGRO-SAD",3.5,2,null],
+["FUNDA DE SULFATO DE AMONIO","Agro Naranjito",0.35,67,null],
+["SACO BLAUKORN","SOLVESA",82,0,null],
+["MAIX 1K","AGRO-SAD",10,3,"2027-07-01"],
+["GLUFONE 1L","AGRO-PROECO",6,10,"2027-10-19"],
+["ESLABON RAIZ 1L","ESLABON",18,8,"2028-08-09"],
+["RAINBOTURBO 1L","SOLVESA",10,3,"2026-10-12"],
+["KALEX 1L","QSI",20,7,"2027-05-01"],
+["GREEN 500ML","NEREAGRO",8,5,"2025-01-01"],
+["GLIFOSATO 1L","AGRO-SAD",6.5,9,"2027-06-01"],
+["KING GALON","PEDRO BAYAS",23,1,"2028-01-09"],
+["OLIMPO 1L","Agro Naranjito",13.5,18,"2029-02-05"],
+["GALERNA 1K","Agro Naranjito",12,3,"2027-12-04"],
+["SEMILLA DE TOMATE","AGRO-SAD",3.5,7,null],
+["SALAM 1L","QSI",10,10,"2027-12-12"],
+["TRIPLEXAC 1L","AGRO-ORGANICO",10,3,"2028-03-30"],
+["ENZIPROM 250CC","QSI",7.5,4,"2025-08-01"],
+["LABIOFOL SUGAR K 1L","AGRO-SAD",11,2,"2030-03-01"],
+["SACO LEOSIL GRUESO","ESLABON",30,25,null],
+["HERVITAM","ESLABON",40,3,"2028-08-05"],
+["FINIDOR 100ML","AGRO-PROECO",8.5,17,"2027-02-26"],
+["KMELOT 100G","AGRO-PROECO",6,3,"2027-02-24"],
+["SACO MURIATO","SOLVESA",32,20,null],
+["EXPLORER-HERBICIDA 1L","SOLVESA",6,11,null],
+["BONBA JACTO 20L","AGRO-SAD",90,1,null],
+["COMBO SUPER KIT NUTRICIONAL","AGRO-ORGANICO",28,3,null],
+["KALEX 500CC","QSI",10.5,12,"2027-01-01"],
+["MIROS 500CC","QSI",14.5,9,"2027-08-01"],
+["FUNDA DE MURIATO 1L","Agro Naranjito",0.4,70,null],
+["CUSAMIZN 1L","ESLABON",28.5,11,"2028-09-20"],
+["OZOIL 500ML","ESLABON",13,21,"2028-08-19"],
+["ROMEX 1KG","INCOAGRO",12,2,"2027-11-04"],
+["FUNGISEI 500ML","AGRO-SAD",13.75,2,null],
+["SACO PEPA DE ORO","BIOFERTICROP",29,19,null],
+["FUNDA DE YPE 1L","Agro Naranjito",0.5,78,null],
+["VIRSANB GALON","ESLABON",80,2,null],
+["CANECA SENATOR","Agro Naranjito",75,1,null],
+["PH CHECK 250ML","AGRO-SAD",2.5,1,"2026-06-01"],
+["SUPER-K60 500G","NEREAGRO",5,3,"2025-09-01"],
+["COMPLEFOL FLORACION 1K","NEREAGRO",4.4,5,null],
+["KYLATE 100ML","AGRO-PROECO",2,15,"2027-07-10"],
+["BOQUILLA JACTO AMARILLA","PEDRO BAYAS",1.75,5,null],
+["CLOROTEX 75","QSI",8,3,"2027-07-22"],
+["SHARIMIDA 250ML","Agro Naranjito",8.5,5,"2027-02-01"],
+["RETARDO","AGRO-SAD",28,1,null],
+["CONFIABLE 500ML","SOLVESA",10,9,"2027-12-01"],
+["SACO CROPSIL","AGRO-PROECO",21,1,null],
+["FUNDA DE UREA DE 1L","Agro Naranjito",0.4,33,null],
+["KILLER 500ML","SOLVESA",3,1,"2026-10-10"],
+["INDUCPRO CALCIO 1L","ESLABON",16.25,9,"2028-03-19"],
+["SACO FOSFOTO","Agro Naranjito",50,1,null],
+["MULTIFIX 100ML","AGRO-PROECO",2.5,3,"2027-06-02"],
+["FUERZA VERDE 1KG","AGRO-SAD",5,0,null],
+["PERMITT-50 250ML","QSI",7,9,"2027-08-01"],
+["CABALLO DE TROYA 500ML","ESLABON",13.25,2,"2028-08-08"],
+["PAMEX 1L","SOLVESA",10,10,"2027-07-01"],
+["KEEPER 250ML","AGRO-SAD",6.5,4,"2026-01-01"],
+["FLASH 500ML","AGRO-PROECO",7,7,null],
+["QUIMIFOL 510","QSI",8.5,0,null],
+["VASO MEDIDOR","Agro Naranjito",1.5,106,null],
+["CRISQUAT-D","SOLVESA",9,15,"2027-02-11"],
+["FUNDA DE SULFANO FINO 1L","Agro Naranjito",0.3,4,null],
+["INDUCFLOR 1L","ESLABON",13,8,"2028-10-20"],
+["COMPLEFOL ENGROSE 1K","NEREAGRO",4.5,8,null],
+["CONTACTO 1L","AGRO-SAD",5,0,"2027-10-01"],
+["BANALPIX 1L","ESLABON",17,1,null],
+["FILOSO 500ML","Agro Naranjito",4,8,"2027-08-25"],
+["BONBA AGROSPRAYER 20L","Agro Naranjito",20,10,null],
+["MOSKITION 500G","AGRO-SAD",6,7,"2027-09-01"],
+["NOVAK-700","AGRO-PROECO",7.5,9,"2027-05-10"],
+["FUNDA DE SULFATO FINO 1L","Agro Naranjito",0.35,4,null],
+["BIOBON 1L","ESLABON",14.5,11,"2029-01-31"],
+["SHY 500ML","AGRO-SAD",6.5,1,"2027-12-01"],
+["CANATREX 1K","SOLVESA",17,12,"2027-04-22"],
+["ESLABON CACAO 1L","ESLABON",18,26,"2028-10-29"],
+["ZOIL 1L","Agro Naranjito",25,23,"2028-08-19"],
+["SENATOR 1L","Agro Naranjito",5,21,"2027-09-19"],
+["GESAPRIM 1K","ECUAQUIMICA",11,6,null],
+["COMPLEFOL INICIO 1K","NEREAGRO",4.5,9,null],
+["TX2 LITRO","AGRO-ORGANICO",13.5,8,"2028-05-18"],
+["MAXICROP 500ML","EMAGRO",8,1,"2025-08-01"],
+["INDUCPRO ZINC 1L","ESLABON",16.25,6,"2028-06-13"],
+["AGROPEGA 1L","AGRO-SAD",5,9,"2027-12-01"],
+["GATILLER 500ML","ESLABON",8.5,6,"2028-10-09"],
+["AGROSTEMIN 200G","QSI",8.5,19,"2028-02-01"],
+["COMBIPLUS 1L","AGRO-PROECO",8.5,10,null],
+["SEICAN 1L","AGRO-SAD",29,8,"2027-04-01"],
+["AZUFROL 1KG","AGRO-SAD",4,22,"2027-07-01"],
+["KILLER 1L","SOLVESA",5,16,null],
+["PROMET CALCIO 1L","QSI",22,1,"2025-01-01"],
+["CPF KONTROL","AGRO-SAD",3.5,2,"2027-07-01"],
+["LEOSIL PREMIUM 1L","ESLABON",14.5,16,"2028-09-06"],
+["DIABOLO 500ML","SOLVESA",9,5,"2026-10-10"],
+["ESLABON CACAO 500ML","ESLABON",9.5,35,null],
+["COMBO FINALIZADOR","AGRO-PROECO",16,15,null],
+["FUNDA DE 8-20-20 X 1L","BIOFERTICROP",0.35,0,null],
+["CUSAMIZN 250ML","ESLABON",7.5,27,null],
+["VULTUR 500ML","AGRO-PROECO",8,11,"2027-10-01"],
+["SENATOR GALON","Agro Naranjito",18,3,"2027-09-19"],
+["COMBO GROW","AGRO-PROECO",18,1,null],
+["ALTERNO 60W 16G","AGRO-QUIM",5,16,null],
+["SUGARINE 500 GALON","SOLVESA",29,0,"2026-01-14"],
+["SACO LEOSIL FINO","ESLABON",28,86,null],
+["SACO FERTIBON CACAO","ESLABON",38,7,null],
+["MUNDANO 1L","QSI",18,7,"2027-02-25"],
+["SACO 8 20 20","BIOFERTICROP",29,33,null],
+["METABOLIK 250ML","AGRO-PROECO",14,32,"2027-09-29"],
+["RESBACTERS 1L","ESLABON",28.5,2,"2027-10-20"],
+["CONTACTO 500ML","AGRO-SAD",3,7,"2027-02-01"],
+["JARUCO 250ML","ESLABON",15,1,null],
+["PONCHO DE AGUAS 500G","AGRO-SAD",8,0,"2027-10-01"],
+["KEEPER 1L","AGRO-SAD",23,1,"2028-01-01"]
+];
 
-const state = { pages: [], mode: 'color', seq: 0 };
-const MAX_DIM = 1900;      // tamaño final de página
-const DETECT_MAX_DIM = 2200; // tamaño usado para capturar/recortar
-
-const el = {
-  pages: document.getElementById('pages'),
-  emptyState: document.getElementById('emptyState'),
-  pageCount: document.getElementById('pageCount'),
-  bottomInfo: document.getElementById('bottomInfo'),
-  btnDownload: document.getElementById('btnDownload'),
-  scanOverlay: document.getElementById('scanOverlay'),
-  scanPreviewImg: document.getElementById('scanPreviewImg'),
-  scanLabel: document.getElementById('scanLabel'),
-  cropModal: document.getElementById('cropModal'),
-  cropHeader: document.getElementById('cropHeader'),
-  cropStageWrap: document.getElementById('cropStageWrap'),
-  cropDisplayCanvas: document.getElementById('cropDisplayCanvas'),
-  cropSvg: document.getElementById('cropSvg'),
-  btnCropFull: document.getElementById('btnCropFull'),
-  btnCropConfirm: document.getElementById('btnCropConfirm'),
+const IMAGES = {
+  "GATILLER 500ML":"Gemini_Generated_Image_x5h35px5h35px5h3.png",
+  "GATILLER 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIXjJemYqkqrqnn4gM_9W0V4BDUZttu5-oCWBLQKh0SaHLEjBslAWONuVl&s=10",
+  "PAMEX 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIVtV_GBHw0h3kKAWjCd6BZHfZmTYQgjhgTxhQyz8yHQ&s=10",
+  "PAMEX 500ML":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFPPjAxYosRFFj4G9pZVJfbdMHmWPqTkL2IF1V8bIx3g&s=10",
+  "KMELOT 100G":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbItcwaOABEBM0fLHWk6V5dJsgG4FFQOy0a50LDb_mcw&s=10",
+  "YARA VITA 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlVQNZW9d0C-deAg2jkKnMnxhegSUzv8lNq7sD5YN7VA&s=10",
+  "ENZIPROM 250CC":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYScKKQdC4bojLOqGa-wpBF89qNOLuiCGwWhqxqrBSlA&s=10",
+  "ADHESIX 100ML":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmy23fgaPFjJFx7btUnfaFmSc1EAzpJP9bKmFTmj-nVYS2nehMLiESXpYo&s=10",
+  "SACO UREA":"https://agrizon.com/cdn/shop/files/urea-50-kg_1024x1024.jpg?v=1698421491",
+  "SACO SULFATO GRUESO":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJijh828B3i7pSATuo5IaJ558cj1pOGzE3Iaou-PQv5w&s=10",
+  "QUIMIFOL 600":"https://qsi.ec/wp-content/uploads/2025/02/Quimifol-600.png",
+  "GREEN MASTER 250ML":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnP6vu27mhEC59USK72MHPNdRV5os0TXt1rCMxJHHf79Y_vKhT3OI3c6M&s=10",
+  "SACO FULL-CACAO":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDS4lgxkeMZhlb6d79iFIBCZ4ca1ByWWO7qSkwlopSCg&s=10",
+  "FERTI-ORGAN GALON":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSLCXQe8tM6ydavtsfNcCY6oGnp4g-dDsKY6BfBKWlKiw&s=10",
+  "GLIFOSATO 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2GSh3g9dreZF5bO9wZR3yveZrbDH9obZc2Je-GR1PWA&s=10",
+  "SHY 500ML":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSP6hASXckYLZxw5NoHfuDj7cPsWZ-f2Nek4HhMoGb7jA&s=10",
+  "CONTACTO 1L ":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdCtFdxF_AmMkVArkw2zYzqSN66sAwLOiAzjp4W7KdzQ&s=10",
+  "KOPERCUP 500G":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTpH1p1BxWuwq0IJ3E8NCf7CemgZyDkBenjnjke4bmMQ&s=10",
+  "AGROPEGA 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRG97KJi0bpDCI5OvdOnwHJ-ebkV6k84BztdpEbyerXC-U0ifUC2fbraKE&s=10",
+  "MIROS 500CC":"https://qsi.ec/wp-content/uploads/2025/02/Miros-300x300.png",
+  "PROMET BORO 250CC":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbdOL5XrjunX36ZxUhFZcpluQPEG4gZwnhd0CgmjLtaQ&s=10",
+  "PROMET CALCIO 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQET7UJurDP-2QT9Jtub8JaN9h0w5iyd7DBb4BefClwcw&s=10",
+  "ESLABON CACAO 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6zYHxT35ASUQAOvzK6bVmXVaKe_6Z4mIYN_RorBciFQ&s=10",
+  "CABALLO DE TROYA 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvlOA9Tpf_7-WbIlp4RkSSMnSGtyMdKu5t0-rSBbDgl04A-IFYXt3tI-Y&s=10",
+  "KILLER GALON":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtP14DBJ2xGDy4bW1sp6A8aBLCzTCSWgEdTjU5mVZpIA&s=10",
+  "KILLER 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBJAqFU4GDmZpNEYkuDs7VdOuvH1kGIgWJne0AYLrtLQ&s=10",
+  "ANGLO QUAT":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRp2G5RakadO-818WkwbEuw--Jaygy5ewl_fNo7Iytagw&s=10",
+  "OLIGOMIX 100G":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2bqxQPOJNWWG0zkiLHmMqbvqQVn1QoxkUkwN3e8PPYw&s=10",
+  "HACHA-ROSS 1L":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQuIezVZgvZ5JlSZZEwuf8nLyjLS3uHDdJsq8Qkqn1Ajg&s=10"
 };
 
-document.getElementById('btnCamera').onclick = () => document.getElementById('cameraInput').click();
-document.getElementById('btnImages').onclick = () => document.getElementById('imageInput').click();
-document.getElementById('btnPdf').onclick = () => document.getElementById('pdfInput').click();
+const DESCRIPTIONS = {
+};
 
-document.getElementById('cameraInput').onchange = e => handleImageFiles(e.target.files);
-document.getElementById('imageInput').onchange = e => handleImageFiles(e.target.files);
-document.getElementById('pdfInput').onchange = e => handlePdfFile(e.target.files[0]);
+function categorize(name){
+  const n = name.toUpperCase();
+  const has = arr => arr.some(k => n.includes(k));
+  if (has(['GLIFOSATO','KILLER','SENATOR','RONDO','ARRASADOR','EXPLORER-HERBICIDA','HACHA-ROSS','DIABOLO','GESAPRIM','CRISQUAT','ANGLO QUAT','ZOIL','FILOSO','BASTNATE','SUGARINE'])) return 'Herbicida';
+  if (has(['FUNGIL','FUNGICIDA','FUNGISEI','LABICUPER','MUNDANO','CLOROTEX','AZUFROL','KMELOT','CONFIABLE','ATTAMIX','TERIGRAN','CANATREX','NOVAK','TRIPLEXAC','MATASEC'])) return 'Fungicida';
+  if (has(['MOSKITION','PERMITT','ALTERNO','VULTUR','GATILLER','KYLATE','MULTIFIX','KAÑON','GLUFONE','RESBACTERS','JARUCO','COMBIPLUS','FINIDOR','METABOLIK','BANALPIX','CPF KONTROL','SHY 500ML','CONTACTO','XSTRATA','SHARIMIDA','PONCHO'])) return 'Insecticida/Acaricida';
+  if (has(['SEMILLA'])) return 'Semilla';
+  if (has(['SACO','FUNDA DE'])) return 'Abono granulado';
+  if (has(['BOQUILLA','BONBA','VASO MEDIDOR'])) return 'Equipo y accesorio';
+  if (has(['COMBO'])) return 'Combo/Kit';
+  if (has(['AGROPEGA','ADHESIX','METRINEX'])) return 'Coadyuvante';
+  if (has(['PH CHECK'])) return 'Corrector de pH';
+  return 'Fertilizante foliar';
+}
 
-document.querySelectorAll('#modeSeg button').forEach(btn=>{
-  btn.onclick = () => {
-    document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    state.mode = btn.dataset.mode;
-  };
+const CAT_ICON = {
+  'Herbicida':'🌾','Fungicida':'🍄','Insecticida/Acaricida':'🐞','Semilla':'🌰',
+  'Abono granulado':'🧂','Equipo y accesorio':'🧰','Combo/Kit':'📦','Coadyuvante':'💧',
+  'Corrector de pH':'⚗️','Fertilizante foliar':'🌿'
+};
+
+const GENERIC_DESCRIPTION = {
+  'Herbicida':'Herbicida para el control de maleza en tu cultivo. Consulta con tu agrónomo la dosis recomendada según la extensión del terreno.',
+  'Fungicida':'Fungicida indicado para prevenir y controlar hongos, manchas y enfermedades foliares en el cultivo.',
+  'Insecticida/Acaricida':'Insecticida/acaricida para el control de plagas e insectos que afectan hojas, tallos y frutos.',
+  'Fertilizante foliar':'Fertilizante foliar que aporta nutrientes esenciales para fortalecer el crecimiento y vigor de la planta.',
+  'Abono granulado':'Abono granulado de aplicación al suelo para la nutrición de fondo del cultivo.',
+  'Semilla':'Semilla seleccionada, lista para siembra.',
+  'Corrector de pH':'Producto para equilibrar el pH del suelo o del agua de aplicación y mejorar la absorción de nutrientes.',
+  'Coadyuvante':'Coadyuvante que mejora la adherencia y efectividad de tus aplicaciones foliares.',
+  'Equipo y accesorio':'Equipo o accesorio para la correcta aplicación de tus productos agrícolas.',
+  'Combo/Kit':'Combo con varios productos para atender distintas necesidades del cultivo en una sola compra.'
+};
+
+function getDescription(p){
+  return DESCRIPTIONS[p.name] || GENERIC_DESCRIPTION[p.cat] || 'Producto agrícola disponible en Agro Naranjito.';
+}
+
+const PRODUCTS = RAW.map((r,i)=>({
+  id: 'p'+i,
+  name: r[0],
+  company: r[1],
+  price: r[2],
+  stock: r[3],
+  exp: r[4],
+  cat: categorize(r[0]),
+  img: IMAGES[r[0]] || null
+}));
+
+/* ======================= STATE ======================= */
+let cart = [];
+const WHATSAPP_NUMBER = "593939079441";
+
+/* ======================= NAV ======================= */
+const tabAdvisor = document.getElementById('tab-advisor');
+const tabCatalog = document.getElementById('tab-catalog');
+const viewAdvisor = document.getElementById('view-advisor');
+const viewCatalog = document.getElementById('view-catalog');
+
+tabAdvisor.onclick = ()=>{
+  tabAdvisor.classList.add('active'); tabCatalog.classList.remove('active');
+  viewAdvisor.classList.remove('hidden'); viewCatalog.classList.add('hidden');
+};
+tabCatalog.onclick = ()=>{
+  tabCatalog.classList.add('active'); tabAdvisor.classList.remove('active');
+  viewCatalog.classList.remove('hidden'); viewAdvisor.classList.add('hidden');
+};
+
+/* ======================= CATALOG RENDER ======================= */
+const grid = document.getElementById('product-grid');
+const searchBox = document.getElementById('search-box');
+const filterCat = document.getElementById('filter-cat');
+const catCount = document.getElementById('cat-count');
+
+const cats = ['Todas las categorías', ...Array.from(new Set(PRODUCTS.map(p=>p.cat))).sort()];
+filterCat.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+function stockInfo(p){
+  if (p.stock === 0) return {label:'Sin stock', cls:'out'};
+  if (p.stock <= 3) return {label:'Stock bajo · '+p.stock, cls:'low'};
+  return {label:'Disponible · '+p.stock, cls:'ok'};
+}
+
+function renderCatalog(){
+  const q = searchBox.value.trim().toLowerCase();
+  const cat = filterCat.value;
+  const list = PRODUCTS.filter(p=>{
+    const matchQ = !q || p.name.toLowerCase().includes(q) || p.company.toLowerCase().includes(q);
+    const matchC = cat === 'Todas las categorías' || p.cat === cat;
+    return matchQ && matchC;
+  });
+  catCount.textContent = `${list.length} producto${list.length!==1?'s':''} encontrado${list.length!==1?'s':''}`;
+
+  if (!list.length){
+    grid.innerHTML = `<div class="empty-state">No encontramos productos con ese criterio. Prueba con otra palabra.</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(p=>{
+    const st = stockInfo(p);
+    const disabled = p.stock === 0 ? 'disabled' : '';
+    const photoInner = p.img
+      ? `<img src="${p.img}" alt="${p.name}" loading="lazy">`
+      : `<span>${CAT_ICON[p.cat]||'🌿'}</span>`;
+    return `
+    <div class="product-card" data-id="${p.id}" style="cursor:pointer;">
+      <div class="product-photo">
+        <span class="cat-tag">${CAT_ICON[p.cat]||'🌿'} ${p.cat}</span>
+        <span class="stock-tag ${st.cls}">${st.label}</span>
+        ${photoInner}
+      </div>
+      <div class="product-body">
+        <div class="product-name">${p.name}</div>
+        <div class="product-company">${p.company}</div>
+        <div class="product-foot" style="justify-content:flex-end;">
+          <button class="mini-add" data-id="${p.id}" ${disabled}>${p.stock===0?'Sin stock':'Agregar'}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.mini-add').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      addToCart(btn.dataset.id);
+      btn.textContent='Agregado ✓';
+      setTimeout(()=>{ if(!btn.disabled) btn.textContent='Agregar'; },1200);
+    };
+  });
+  grid.querySelectorAll('.product-card').forEach(card=>{
+    card.onclick = ()=> openProductModal(card.dataset.id);
+  });
+}
+searchBox.oninput = renderCatalog;
+filterCat.onchange = renderCatalog;
+renderCatalog();
+
+/* ======================= CART ======================= */
+const cartDrawer = document.getElementById('cart-drawer');
+const overlay = document.getElementById('overlay');
+const cartItemsEl = document.getElementById('cart-items');
+const cartBadge = document.getElementById('cart-badge');
+const cartTotalEl = document.getElementById('cart-total');
+const checkoutBtn = document.getElementById('checkout-btn');
+
+function addToCart(id, qty=1){
+  const existing = cart.find(c=>c.id===id);
+  if (existing) existing.qty += qty;
+  else cart.push({id, qty});
+  renderCart();
+  openCart();
+}
+function removeFromCart(id){ cart = cart.filter(c=>c.id!==id); renderCart(); }
+function setQty(id, qty){
+  const item = cart.find(c=>c.id===id);
+  if (!item) return;
+  item.qty = Math.max(1, qty);
+  renderCart();
+}
+
+function renderCart(){
+  const totalQty = cart.reduce((s,c)=>s+c.qty,0);
+  cartBadge.textContent = totalQty;
+
+  if (!cart.length){
+    cartItemsEl.innerHTML = `<div class="cart-empty">Tu carrito está vacío.<br>Agrega productos desde el asesor IA o el catálogo.</div>`;
+    cartTotalEl.textContent = '0 productos';
+    checkoutBtn.disabled = true;
+    return;
+  }
+
+  cartItemsEl.innerHTML = cart.map(c=>{
+    const p = PRODUCTS.find(pp=>pp.id===c.id);
+    if (!p) return '';
+    return `
+    <div class="cart-item">
+      <div class="ci-info">
+        <div class="ci-name">${p.name}</div>
+        <div class="ci-price">${p.company}</div>
+        <div class="ci-qty">
+          <button class="qty-btn" data-act="dec" data-id="${p.id}">−</button>
+          <span class="qty-val">${c.qty}</span>
+          <button class="qty-btn" data-act="inc" data-id="${p.id}">+</button>
+          <button class="ci-remove" data-act="rm" data-id="${p.id}">Quitar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalQtyItems = cart.reduce((s,c)=>s+c.qty,0);
+  cartTotalEl.textContent = totalQtyItems + (totalQtyItems===1?' producto':' productos');
+  checkoutBtn.disabled = false;
+
+  cartItemsEl.querySelectorAll('[data-act]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.id;
+      const item = cart.find(c=>c.id===id);
+      if (btn.dataset.act==='inc') setQty(id, item.qty+1);
+      if (btn.dataset.act==='dec') setQty(id, item.qty-1);
+      if (btn.dataset.act==='rm') removeFromCart(id);
+    };
+  });
+}
+
+function openCart(){ cartDrawer.classList.add('show'); overlay.classList.add('show'); }
+function closeCart(){ cartDrawer.classList.remove('show'); overlay.classList.remove('show'); }
+document.getElementById('open-cart').onclick = openCart;
+document.getElementById('close-cart').onclick = closeCart;
+overlay.onclick = closeCart;
+
+checkoutBtn.onclick = ()=>{
+  if (!cart.length) return;
+  let lines = cart.map(c=>{
+    const p = PRODUCTS.find(pp=>pp.id===c.id);
+    return `• ${p.name} x${c.qty}`;
+  }).join('\n');
+  const msg = `Hola Agro Naranjito 🌱, quiero hacer este pedido:\n\n${lines}\n\n¿Me confirman precio y disponibilidad? ¡Gracias!`;
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+};
+
+renderCart();
+
+/* ======================= FULLSCREEN IMAGE LIGHTBOX ======================= */
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxClose = document.getElementById('lightbox-close');
+
+function openLightbox(src, alt){
+  lightboxImg.src = src;
+  lightboxImg.alt = alt || '';
+  lightbox.classList.add('show');
+}
+function closeLightbox(){
+  lightbox.classList.remove('show');
+}
+lightboxClose.onclick = closeLightbox;
+lightbox.onclick = (e)=>{ if (e.target === lightbox) closeLightbox(); };
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape' && lightbox.classList.contains('show')) closeLightbox();
 });
 
-function showOverlay(previewSrc, label){
-  el.scanPreviewImg.src = previewSrc || '';
-  el.scanLabel.textContent = label || 'MEJORANDO IMAGEN…';
-  el.scanOverlay.classList.add('active');
-}
-function hideOverlay(){ el.scanOverlay.classList.remove('active'); }
+/* ======================= PRODUCT DETAIL MODAL ======================= */
+const productModal = document.getElementById('product-modal');
+const pmOverlay = document.getElementById('pm-overlay');
+const pmClose = document.getElementById('pm-close');
+const pmPhoto = document.getElementById('pm-photo');
+const pmCatTag = document.getElementById('pm-cat-tag');
+const pmName = document.getElementById('pm-name');
+const pmCompany = document.getElementById('pm-company');
+const pmStock = document.getElementById('pm-stock');
+const pmDesc = document.getElementById('pm-desc');
+const pmQtyVal = document.getElementById('pm-qty-val');
+const pmQtyDec = document.getElementById('pm-qty-dec');
+const pmQtyInc = document.getElementById('pm-qty-inc');
+const pmAddBtn = document.getElementById('pm-add-btn');
 
-/* ---------------- flujo de captura/subida ---------------- */
+let pmCurrentProduct = null;
+let pmQty = 1;
 
-async function handleImageFiles(fileList){
-  const files = Array.from(fileList || []);
-  if(!files.length) return;
-  for(const file of files){
-    await processImageFile(file);
+function openProductModal(id){
+  const p = PRODUCTS.find(pp=>pp.id===id);
+  if (!p) return;
+  pmCurrentProduct = p;
+  pmQty = 1;
+  pmQtyVal.textContent = pmQty;
+
+  pmCatTag.textContent = `${CAT_ICON[p.cat]||'🌿'} ${p.cat}`;
+  pmName.textContent = p.name;
+  pmCompany.textContent = p.company;
+  pmDesc.textContent = getDescription(p);
+
+  pmPhoto.querySelectorAll('img, span.pm-icon-fallback, .pm-zoom-hint').forEach(el=>el.remove());
+  if (p.img){
+    const img = document.createElement('img');
+    img.src = p.img;
+    img.alt = p.name;
+    img.onclick = ()=> openLightbox(p.img, p.name);
+    pmPhoto.appendChild(img);
+
+    const hint = document.createElement('span');
+    hint.className = 'pm-zoom-hint';
+    hint.textContent = '🔍 Ver más grande';
+    pmPhoto.appendChild(hint);
+  } else {
+    const span = document.createElement('span');
+    span.className = 'pm-icon-fallback';
+    span.textContent = CAT_ICON[p.cat] || '🌿';
+    pmPhoto.appendChild(span);
   }
-  document.getElementById('cameraInput').value = '';
-  document.getElementById('imageInput').value = '';
+
+  const st = stockInfo(p);
+  pmStock.textContent = st.label;
+  pmStock.className = 'pm-stock ' + st.cls;
+
+  const outOfStock = p.stock === 0;
+  pmAddBtn.disabled = outOfStock;
+  pmAddBtn.textContent = outOfStock ? 'Sin stock' : 'Agregar al carrito';
+  pmAddBtn.classList.remove('added');
+  pmQtyDec.disabled = outOfStock;
+  pmQtyInc.disabled = outOfStock;
+
+  productModal.classList.add('show');
 }
 
-async function processImageFile(file){
-  const dataUrl = await fileToDataUrl(file);
-  const rawCanvas = await loadImageToCanvas(dataUrl, DETECT_MAX_DIM);
-
-  // recorte de bordes, estilo Google Drive: auto-detecta y permite ajustar
-  const croppedCanvas = await openCropModal(rawCanvas);
-
-  showOverlay(croppedCanvas.toDataURL('image/jpeg', 0.85), 'MEJORANDO IMAGEN…');
-  await new Promise(r=>requestAnimationFrame(r));
-  const finalCanvas = capDimension(croppedCanvas, MAX_DIM);
-  enhanceCanvas(finalCanvas, state.mode);
-  addPage(finalCanvas);
-  hideOverlay();
+function closeProductModal(){
+  productModal.classList.remove('show');
+  pmCurrentProduct = null;
 }
 
-async function handlePdfFile(file){
-  if(!file) return;
-  showOverlay('', 'LEYENDO PDF…');
-  await new Promise(r=>requestAnimationFrame(r));
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
-  for(let i=1;i<=pdf.numPages;i++){
-    el.scanLabel.textContent = `MEJORANDO PÁGINA ${i} DE ${pdf.numPages}…`;
-    const page = await pdf.getPage(i);
-    const viewport = page.getViewport({scale: 2.0});
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-    await page.render({canvasContext: ctx, viewport}).promise;
-    el.scanPreviewImg.src = canvas.toDataURL('image/jpeg', 0.85);
-    await new Promise(r=>requestAnimationFrame(r));
-    // las páginas de un PDF ya son rectangulares: no necesitan recorte de bordes
-    enhanceCanvas(canvas, state.mode);
-    addPage(canvas);
-  }
-  hideOverlay();
-  document.getElementById('pdfInput').value = '';
+pmQtyDec.onclick = ()=>{
+  pmQty = Math.max(1, pmQty-1);
+  pmQtyVal.textContent = pmQty;
+};
+pmQtyInc.onclick = ()=>{
+  pmQty = pmQty+1;
+  pmQtyVal.textContent = pmQty;
+};
+pmAddBtn.onclick = ()=>{
+  if (!pmCurrentProduct || pmCurrentProduct.stock===0) return;
+  addToCart(pmCurrentProduct.id, pmQty);
+  pmAddBtn.textContent = 'Agregado ✓';
+  pmAddBtn.classList.add('added');
+  setTimeout(()=>{ closeProductModal(); }, 550);
+};
+pmClose.onclick = closeProductModal;
+pmOverlay.onclick = closeProductModal;
+document.addEventListener('keydown', (e)=>{
+  if (e.key === 'Escape' && productModal.classList.contains('show')) closeProductModal();
+});
+
+/* ======================= AI ADVISOR ======================= */
+const chatLog = document.getElementById('chat-log');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+
+function addUserMsg(text){
+  const el = document.createElement('div');
+  el.className = 'msg user';
+  el.textContent = text;
+  chatLog.appendChild(el);
+  chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function fileToDataUrl(file){
-  return new Promise((resolve,reject)=>{
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
+function addBotMsg(text, recs){
+  const wrap = document.createElement('div');
+  wrap.style.display='flex'; wrap.style.flexDirection='column'; wrap.style.gap='10px'; wrap.style.alignSelf='flex-start'; wrap.style.maxWidth='84%';
 
-function loadImageToCanvas(dataUrl, maxDim){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = () => {
-      let w = img.naturalWidth, h = img.naturalHeight;
-      const scale = Math.min(1, maxDim / Math.max(w,h));
-      w = Math.round(w*scale); h = Math.round(h*scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas);
-    };
-    img.onerror = reject;
-    img.src = dataUrl;
-  });
-}
+  const el = document.createElement('div');
+  el.className = 'msg bot';
+  el.style.maxWidth = '100%';
+  el.textContent = text;
+  wrap.appendChild(el);
 
-function capDimension(canvas, maxDim){
-  const w = canvas.width, h = canvas.height;
-  const scale = Math.min(1, maxDim / Math.max(w,h));
-  if(scale >= 1) return canvas;
-  const out = document.createElement('canvas');
-  out.width = Math.round(w*scale);
-  out.height = Math.round(h*scale);
-  out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
-  return out;
-}
-
-/* ---------------- recorte automático de bordes (estilo Google Drive) ---------------- */
-
-function orderPoints(pts){
-  const sum = p => p.x + p.y;
-  const diff = p => p.x - p.y;
-  const tl = pts.reduce((a,b)=> sum(a) < sum(b) ? a : b);
-  const br = pts.reduce((a,b)=> sum(a) > sum(b) ? a : b);
-  const tr = pts.reduce((a,b)=> diff(a) > diff(b) ? a : b);
-  const bl = pts.reduce((a,b)=> diff(a) < diff(b) ? a : b);
-  return [tl,tr,br,bl];
-}
-
-function detectDocumentCorners(canvas){
-  if(typeof cv === 'undefined' || !cvReady) return null;
-  let src, gray, blurred, edges, kernel, contours, hierarchy;
-  try{
-    src = cv.imread(canvas);
-    gray = new cv.Mat();
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    blurred = new cv.Mat();
-    cv.GaussianBlur(gray, blurred, new cv.Size(5,5), 0);
-    edges = new cv.Mat();
-    cv.Canny(blurred, edges, 50, 150);
-    kernel = cv.Mat.ones(3,3,cv.CV_8U);
-    cv.dilate(edges, edges, kernel);
-
-    contours = new cv.MatVector();
-    hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
-
-    const imgArea = src.rows * src.cols;
-    let bestPoints = null, bestArea = 0;
-
-    for(let i=0;i<contours.size();i++){
-      const cnt = contours.get(i);
-      const peri = cv.arcLength(cnt, true);
-      const approx = new cv.Mat();
-      cv.approxPolyDP(cnt, approx, 0.02*peri, true);
-      if(approx.rows === 4){
-        const area = Math.abs(cv.contourArea(approx));
-        if(area > bestArea && area > imgArea*0.15){
-          bestArea = area;
-          bestPoints = [];
-          for(let k=0;k<4;k++){
-            bestPoints.push({ x: approx.data32S[k*2], y: approx.data32S[k*2+1] });
-          }
-        }
+  if (recs && recs.length){
+    const recWrap = document.createElement('div');
+    recWrap.className = 'rec-cards';
+    recs.forEach(r=>{
+      const p = PRODUCTS.find(pp => pp.name === r.name);
+      if (!p) return;
+      const card = document.createElement('div');
+      card.className = 'rec-card';
+      card.style.cursor = 'pointer';
+      const outOfStock = p.stock === 0;
+      card.innerHTML = `
+        <div class="rc-info">
+          <div class="rc-name">${p.name}</div>
+          <div class="rc-meta">${p.company} · ${p.cat} · ${outOfStock?'Sin stock':'Stock: '+p.stock}</div>
+          <div class="rc-why">${r.reason || ''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <button class="add-btn" ${outOfStock?'disabled':''}>${outOfStock?'Sin stock':'Agregar'}</button>
+        </div>`;
+      const btn = card.querySelector('.add-btn');
+      if (!outOfStock){
+        btn.onclick = (e)=>{ e.stopPropagation(); addToCart(p.id); btn.textContent='Agregado ✓'; btn.classList.add('added'); };
       }
-      approx.delete();
-      cnt.delete();
-    }
-    return bestPoints ? orderPoints(bestPoints) : null;
-  }catch(e){
-    console.warn('Detección automática falló:', e);
-    return null;
-  }finally{
-    [src,gray,blurred,edges,kernel,contours,hierarchy].forEach(m => { if(m && m.delete) m.delete(); });
-  }
-}
-
-function warpPerspective(canvas, orderedPts){
-  const [tl,tr,br,bl] = orderedPts;
-  const widthA = Math.hypot(br.x-bl.x, br.y-bl.y);
-  const widthB = Math.hypot(tr.x-tl.x, tr.y-tl.y);
-  const maxWidth = Math.max(widthA, widthB);
-  const heightA = Math.hypot(tr.x-br.x, tr.y-br.y);
-  const heightB = Math.hypot(tl.x-bl.x, tl.y-bl.y);
-  const maxHeight = Math.max(heightA, heightB);
-
-  if(typeof cv === 'undefined' || !cvReady || maxWidth < 10 || maxHeight < 10){
-    // fallback: recorte rectangular simple (sin corrección de perspectiva)
-    const xs = orderedPts.map(p=>p.x), ys = orderedPts.map(p=>p.y);
-    const minX = Math.max(0, Math.min(...xs)), maxX = Math.min(canvas.width, Math.max(...xs));
-    const minY = Math.max(0, Math.min(...ys)), maxY = Math.min(canvas.height, Math.max(...ys));
-    const out = document.createElement('canvas');
-    out.width = Math.max(1, Math.round(maxX-minX));
-    out.height = Math.max(1, Math.round(maxY-minY));
-    out.getContext('2d').drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
-    return out;
-  }
-
-  let src, srcTri, dstTri, M, dst;
-  try{
-    src = cv.imread(canvas);
-    srcTri = cv.matFromArray(4,1,cv.CV_32FC2, [tl.x,tl.y, tr.x,tr.y, br.x,br.y, bl.x,bl.y]);
-    dstTri = cv.matFromArray(4,1,cv.CV_32FC2, [0,0, maxWidth,0, maxWidth,maxHeight, 0,maxHeight]);
-    M = cv.getPerspectiveTransform(srcTri, dstTri);
-    dst = new cv.Mat();
-    cv.warpPerspective(src, dst, M, new cv.Size(maxWidth, maxHeight), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-    const out = document.createElement('canvas');
-    out.width = Math.round(maxWidth);
-    out.height = Math.round(maxHeight);
-    cv.imshow(out, dst);
-    return out;
-  }finally{
-    [src,srcTri,dstTri,M,dst].forEach(m => { if(m && m.delete) m.delete(); });
-  }
-}
-
-let cropDragState = { activePoint: null, points: [] };
-
-function openCropModal(canvas){
-  return new Promise(resolve => {
-    const maxW = Math.min(window.innerWidth - 48, 460);
-    const maxH = Math.min(window.innerHeight - 230, 620);
-    const scale = Math.min(1, maxW / canvas.width, maxH / canvas.height);
-    const dispW = Math.max(60, Math.round(canvas.width*scale));
-    const dispH = Math.max(60, Math.round(canvas.height*scale));
-
-    el.cropDisplayCanvas.width = dispW;
-    el.cropDisplayCanvas.height = dispH;
-    el.cropDisplayCanvas.getContext('2d').drawImage(canvas, 0, 0, dispW, dispH);
-
-    el.cropSvg.setAttribute('viewBox', `0 0 ${dispW} ${dispH}`);
-    el.cropSvg.setAttribute('width', dispW);
-    el.cropSvg.setAttribute('height', dispH);
-    el.cropStageWrap.style.width = dispW + 'px';
-    el.cropStageWrap.style.height = dispH + 'px';
-
-    el.cropHeader.textContent = cvReady
-      ? 'Detectamos el documento. Ajusta las esquinas si hace falta y confirma.'
-      : 'Arrastra las esquinas para encuadrar el documento y confirma.';
-
-    let detected = null;
-    try{ detected = detectDocumentCorners(canvas); }catch(e){ detected = null; }
-
-    let points;
-    if(detected){
-      points = detected.map(p => ({ x: p.x*scale, y: p.y*scale }));
-    } else {
-      const m = 0.06;
-      points = [
-        { x: dispW*m,     y: dispH*m     },
-        { x: dispW*(1-m), y: dispH*m     },
-        { x: dispW*(1-m), y: dispH*(1-m) },
-        { x: dispW*m,     y: dispH*(1-m) },
-      ];
-    }
-    cropDragState.points = points;
-
-    renderCropOverlay();
-    el.cropModal.classList.add('active');
-
-    function onDone(useFull){
-      el.cropModal.classList.remove('active');
-      el.cropSvg.innerHTML = '';
-      if(useFull){
-        resolve(canvas);
-      } else {
-        const fullPts = cropDragState.points.map(p => ({ x: p.x/scale, y: p.y/scale }));
-        try{
-          const warped = warpPerspective(canvas, fullPts);
-          resolve(warped);
-        }catch(e){
-          console.warn('Recorte falló, usando imagen completa:', e);
-          resolve(canvas);
-        }
-      }
-    }
-
-    el.btnCropConfirm.onclick = () => onDone(false);
-    el.btnCropFull.onclick = () => onDone(true);
-  });
-}
-
-function renderCropOverlay(){
-  const svg = el.cropSvg;
-  svg.innerHTML = '';
-  const pts = cropDragState.points;
-  const ns = 'http://www.w3.org/2000/svg';
-
-  const poly = document.createElementNS(ns, 'polygon');
-  poly.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
-  poly.setAttribute('class', 'crop-poly');
-  svg.appendChild(poly);
-
-  pts.forEach((p, idx) => {
-    const c = document.createElementNS(ns, 'circle');
-    c.setAttribute('cx', p.x);
-    c.setAttribute('cy', p.y);
-    c.setAttribute('r', 12);
-    c.setAttribute('class', 'crop-handle');
-    c.addEventListener('pointerdown', ev => {
-      ev.preventDefault();
-      cropDragState.activePoint = idx;
-      c.setPointerCapture(ev.pointerId);
+      card.onclick = ()=> openProductModal(p.id);
+      recWrap.appendChild(card);
     });
-    c.addEventListener('pointermove', ev => {
-      if(cropDragState.activePoint !== idx) return;
-      const rect = svg.getBoundingClientRect();
-      const scaleX = svg.viewBox.baseVal.width / rect.width;
-      const scaleY = svg.viewBox.baseVal.height / rect.height;
-      let x = (ev.clientX - rect.left) * scaleX;
-      let y = (ev.clientY - rect.top) * scaleY;
-      x = Math.max(0, Math.min(svg.viewBox.baseVal.width, x));
-      y = Math.max(0, Math.min(svg.viewBox.baseVal.height, y));
-      cropDragState.points[idx] = { x, y };
-      renderCropOverlay();
-    });
-    c.addEventListener('pointerup', ev => {
-      cropDragState.activePoint = null;
-    });
-    svg.appendChild(c);
+    wrap.appendChild(recWrap);
+  }
+  chatLog.appendChild(wrap);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function addClarifyChips(options){
+  const wrap = document.createElement('div');
+  wrap.className = 'clarify-chips';
+  options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'clarify-chip';
+    btn.textContent = opt.label;
+    btn.onclick = ()=>{ chatInput.value = opt.query; handleSend(); };
+    wrap.appendChild(btn);
   });
+  chatLog.appendChild(wrap);
+  chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-/* ---------------- mejora de imagen (niveles, contraste, nitidez) ---------------- */
-
-function clamp(v){ return v<0?0:(v>255?255:v); }
-
-function percentileBounds(hist, total){
-  const lowCut = total*0.006, highCutFromTop = total*0.006;
-  let cum=0, lo=0, hi=255;
-  for(let v=0;v<256;v++){ cum+=hist[v]; if(cum>=lowCut){ lo=v; break; } }
-  cum=0;
-  for(let v=255;v>=0;v--){ cum+=hist[v]; if(cum>=highCutFromTop){ hi=v; break; } }
-  if(hi<=lo){ lo=0; hi=255; }
-  return [lo,hi];
+function addTypingIndicator(){
+  const el = document.createElement('div');
+  el.className = 'msg bot typing';
+  el.id = 'typing-indicator';
+  el.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  chatLog.appendChild(el);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function removeTypingIndicator(){
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
 }
 
-function enhanceCanvas(canvas, mode){
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const imgData = ctx.getImageData(0,0,w,h);
-  const data = imgData.data;
-  const total = w*h;
-
-  if(mode === 'gray' || mode === 'bn'){
-    for(let i=0;i<data.length;i+=4){
-      const lum = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
-      data[i] = data[i+1] = data[i+2] = lum;
-    }
-  }
-
-  const histR = new Array(256).fill(0), histG = new Array(256).fill(0), histB = new Array(256).fill(0);
-  for(let i=0;i<data.length;i+=4){
-    histR[data[i]]++; histG[data[i+1]]++; histB[data[i+2]]++;
-  }
-  const [rlo,rhi] = percentileBounds(histR, total);
-  const [glo,ghi] = percentileBounds(histG, total);
-  const [blo,bhi] = percentileBounds(histB, total);
-
-  const contrastFactor = mode === 'bn' ? 1.55 : (mode === 'gray' ? 1.3 : 1.18);
-  const brightnessBoost = mode === 'bn' ? 10 : 6;
-
-  for(let i=0;i<data.length;i+=4){
-    let r = (data[i]-rlo) * 255/Math.max(1,(rhi-rlo));
-    let g = (data[i+1]-glo) * 255/Math.max(1,(ghi-glo));
-    let b = (data[i+2]-blo) * 255/Math.max(1,(bhi-blo));
-
-    r = (r-128)*contrastFactor + 128 + brightnessBoost;
-    g = (g-128)*contrastFactor + 128 + brightnessBoost;
-    b = (b-128)*contrastFactor + 128 + brightnessBoost;
-
-    if(mode === 'color'){
-      const avg = (r+g+b)/3;
-      r = avg + (r-avg)*1.12;
-      g = avg + (g-avg)*1.12;
-      b = avg + (b-avg)*1.12;
-    }
-
-    data[i] = clamp(r);
-    data[i+1] = clamp(g);
-    data[i+2] = clamp(b);
-  }
-
-  ctx.putImageData(imgData, 0, 0);
-  sharpen(ctx, w, h);
+function stripAccents(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 
-function sharpen(ctx, w, h){
-  const src = ctx.getImageData(0,0,w,h);
-  const out = ctx.createImageData(w,h);
-  const s = src.data, o = out.data;
-  const kernel = [0,-0.6,0, -0.6,3.4,-0.6, 0,-0.6,0];
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      const idx = (y*w+x)*4;
-      if(x===0||y===0||x===w-1||y===h-1){
-        o[idx]=s[idx]; o[idx+1]=s[idx+1]; o[idx+2]=s[idx+2]; o[idx+3]=s[idx+3];
-        continue;
-      }
-      let r=0,g=0,b=0,k=0;
-      for(let ky=-1;ky<=1;ky++){
-        for(let kx=-1;kx<=1;kx++){
-          const nIdx = ((y+ky)*w+(x+kx))*4;
-          const weight = kernel[k++];
-          r += s[nIdx]*weight;
-          g += s[nIdx+1]*weight;
-          b += s[nIdx+2]*weight;
-        }
-      }
-      o[idx]=clamp(r); o[idx+1]=clamp(g); o[idx+2]=clamp(b); o[idx+3]=s[idx+3];
-    }
-  }
-  ctx.putImageData(out,0,0);
-}
-
-/* ---------------- pila de páginas ---------------- */
-
-function addPage(canvas){
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  state.pages.push({ id: ++state.seq, dataUrl, w: canvas.width, h: canvas.height });
-  render();
-}
-
-function rotatePage(id){
-  const p = state.pages.find(p=>p.id===id);
-  if(!p) return;
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalHeight;
-    canvas.height = img.naturalWidth;
-    const ctx = canvas.getContext('2d');
-    ctx.translate(canvas.width/2, canvas.height/2);
-    ctx.rotate(Math.PI/2);
-    ctx.drawImage(img, -img.naturalWidth/2, -img.naturalHeight/2);
-    p.dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    p.w = canvas.width; p.h = canvas.height;
-    render();
-  };
-  img.src = p.dataUrl;
-}
-
-function deletePage(id){
-  state.pages = state.pages.filter(p=>p.id!==id);
-  render();
-}
-
-function movePage(id, dir){
-  const idx = state.pages.findIndex(p=>p.id===id);
-  const newIdx = idx+dir;
-  if(newIdx<0 || newIdx>=state.pages.length) return;
-  const tmp = state.pages[idx];
-  state.pages[idx] = state.pages[newIdx];
-  state.pages[newIdx] = tmp;
-  render();
-}
-
-function render(){
-  el.pages.innerHTML = '';
-  el.emptyState.style.display = state.pages.length ? 'none' : 'block';
-  state.pages.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'page-card';
-    card.innerHTML = `
-      <div class="thumb-wrap">
-        <span class="page-index">${i+1}</span>
-        <img src="${p.dataUrl}" alt="Página ${i+1}">
-      </div>
-      <div class="page-tools">
-        <button title="Subir" data-act="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg></button>
-        <button title="Bajar" data-act="down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
-        <button title="Rotar" data-act="rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></button>
-        <button title="Eliminar" class="del" data-act="del"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></button>
-      </div>
-    `;
-    card.querySelector('[data-act="up"]').onclick = () => movePage(p.id, -1);
-    card.querySelector('[data-act="down"]').onclick = () => movePage(p.id, 1);
-    card.querySelector('[data-act="rotate"]').onclick = () => rotatePage(p.id);
-    card.querySelector('[data-act="del"]').onclick = () => deletePage(p.id);
-    el.pages.appendChild(card);
-  });
-
-  el.pageCount.textContent = state.pages.length;
-  el.bottomInfo.textContent = state.pages.length === 1 ? '1 página lista' : `${state.pages.length} páginas listas`;
-  el.btnDownload.disabled = state.pages.length === 0;
-}
-
-el.btnDownload.onclick = async () => {
-  if(!state.pages.length) return;
-  el.btnDownload.disabled = true;
-  el.btnDownload.textContent = 'Generando…';
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-
-  state.pages.forEach((p, i) => {
-    if(i>0) pdf.addPage();
-    const imgRatio = p.w / p.h;
-    const pageRatio = pageW / pageH;
-    let drawW, drawH;
-    if(imgRatio > pageRatio){
-      drawW = pageW;
-      drawH = pageW / imgRatio;
-    } else {
-      drawH = pageH;
-      drawW = pageH * imgRatio;
-    }
-    const x = (pageW - drawW) / 2;
-    const y = (pageH - drawH) / 2;
-    pdf.addImage(p.dataUrl, 'JPEG', x, y, drawW, drawH, undefined, 'FAST');
-  });
-
-  pdf.save('documento-escaneado.pdf');
-  el.btnDownload.disabled = false;
-  el.btnDownload.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/></svg> Descargar PDF`;
+const KEYWORD_MAP = {
+  'Fungicida': [
+    'hongo','hongos','ongo','ongos','mancha','manchas','moho','mildiu','roya',
+    'pudricion','pudre','pudriendo','se pudre','fungos','ceniza','oidio',
+    'antracnosis','manchada','manchadas','manchado','manchados','se esta pudriendo',
+    'esta podrida','podrida','tizon','requemado','requemada'
+  ],
+  'Herbicida': [
+    'maleza','malezas','hierba mala','hierbas malas','monte','yerba','rastrojo',
+    'matamaleza','malas hierbas','desyerbar','limpiar el terreno','limpiar terreno',
+    'crece mucho monte','terreno enmontado','enmontado','enmontada'
+  ],
+  'Insecticida/Acaricida': [
+    'plaga','plagas','insecto','insectos','gusano','gusanos','pulgon','pulgones',
+    'mosca','moscas','acaro','acaros','trips','babosa','babosas','cochinilla',
+    'chinche','larva','larvas','picadura','comiendo hojas','hueco en las hojas',
+    'huecos en las hojas','se comen las hojas','me comen las hojas','bichos',
+    'bicho','hormigas','hormiga','se estan comiendo','estan comiendo mi planta',
+    'estan comiendo mi cultivo','tiene bichos'
+  ],
+  'Fertilizante foliar': [
+    'amarilla','amarillas','amarillenta','amarillento','debil','debiles',
+    'nutriente','nutrientes','crecimiento','vigor','deficiencia','clorosis',
+    'raquitica','raquitico','no crece','poco desarrollo','abono foliar',
+    'fertilizante','se esta muriendo','se muere','se esta secando','se seca',
+    'esta seca','hojas caidas','se le caen las hojas','hojas caen',
+    'no se ve bien','esta mal','luce mal','se ve fea','se ve mal',
+    'como fortalecer','como reforzar','para que crezca','para que crezca mas',
+    'esta triste','planta triste','poco desarrollo de raiz'
+  ],
+  'Corrector de pH': ['ph','acidez','acido','alcalino','suelo acido','agua dura'],
+  'Semilla': ['semilla','semillas','sembrar','siembra','voy a sembrar'],
+  'Abono granulado': ['abono','granulado','saco de abono','fertilizacion de suelo','urea','sulfato'],
+  'Coadyuvante': ['pegante','adherente','coadyuvante','fijador'],
+  'Equipo y accesorio': ['bomba','fumigar','boquilla','aspersora','equipo de fumigacion']
 };
 
-render();
+const FLOWER_WORDS = [
+  'flor','florece','floracion','florecer','fruto','frutos','engrose','cuajado',
+  'cuaje','produccion','no florece','no da fruto','no da frutos','poca produccion',
+  'frutos pequenos','fruta pequena'
+];
+
+const GENERIC_HELP_PHRASES = [
+  'que me recomiendas','que me recomienda','recomiendame','recomiendame algo',
+  'ayudame','ayuda','necesito ayuda','no se que tiene','no se que le pasa',
+  'no se que es','no se que tengo','que tengo','que tiene mi planta',
+  'que tiene mi cultivo','que le pasa a mi planta','que le pasa a mi cultivo',
+  'algo para mi cultivo','algo para mi planta','que producto me recomiendas',
+  'que necesito','no se por donde empezar','no se que comprar','no se que usar'
+];
+
+const CATEGORY_REASON = {
+  'Herbicida': 'Herbicida indicado para el control de maleza en el cultivo.',
+  'Fungicida': 'Fungicida recomendado para controlar hongos y manchas en las hojas.',
+  'Insecticida/Acaricida': 'Controla plagas e insectos que están afectando la planta.',
+  'Fertilizante foliar': 'Aporta nutrientes para fortalecer y dar vigor a la planta.',
+  'Abono granulado': 'Fertilizante de aplicación al suelo para nutrición de fondo.',
+  'Semilla': 'Semilla de buena calidad para tu siembra.',
+  'Corrector de pH': 'Ayuda a equilibrar el pH para una mejor absorción de nutrientes.',
+  'Coadyuvante': 'Mejora la adherencia y efectividad de tus aplicaciones.',
+  'Equipo y accesorio': 'Equipo necesario para aplicar bien tus productos.',
+  'Combo/Kit': 'Combo completo para atender varias necesidades del cultivo a la vez.'
+};
+
+const CLARIFY_OPTIONS = [
+  { label: '🍂 Tiene hongos o manchas', query: 'Mis plantas tienen hongos y manchas en las hojas' },
+  { label: '🐛 Tiene plagas o insectos', query: 'Veo insectos y plagas comiéndose las hojas' },
+  { label: '🌾 Tengo maleza', query: 'Tengo mucha maleza en el terreno' },
+  { label: '💛 Se ve amarilla o débil', query: 'Mi planta se ve amarilla y débil' },
+  { label: '🌸 Necesita florear / dar fruto', query: 'Necesito que mi cultivo florezca y llene más fruto' }
+];
+
+function analyzeQuery(rawText){
+  const text = stripAccents(rawText.toLowerCase());
+
+  const scores = {};
+  for (const cat in KEYWORD_MAP){
+    let score = 0;
+    KEYWORD_MAP[cat].forEach(k=>{ if (text.includes(stripAccents(k))) score++; });
+    if (score>0) scores[cat] = score;
+  }
+  const wantsFlowering = FLOWER_WORDS.some(w=>text.includes(stripAccents(w)));
+
+  const directHits = PRODUCTS.filter(p=>{
+    const name = stripAccents(p.name.toLowerCase());
+    return name.split(' ').some(w=> w.length>3 && text.includes(w));
+  });
+
+  const rankedCats = Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
+  const isGenericHelp = GENERIC_HELP_PHRASES.some(p=>text.includes(stripAccents(p)));
+
+  if (!rankedCats.length && !directHits.length){
+    return {
+      reply: isGenericHelp
+        ? "¡Con gusto! Elige la opción que más se parezca a lo que ves en tu cultivo, o cuéntame con tus palabras (por ejemplo: hojas con manchas, insectos, maleza, planta amarilla)."
+        : "Cuéntame un poco más: ¿ves hongos o manchas, plagas, maleza, o la planta se ve amarilla y débil? También puedes elegir una opción abajo.",
+      recommendations: [],
+      showClarify: true
+    };
+  }
+
+  let pool = [];
+  if (directHits.length) pool = directHits.slice(0,3);
+
+  rankedCats.slice(0,2).forEach(cat=>{
+    let candidates = PRODUCTS.filter(p=>p.cat===cat);
+    if (cat==='Fertilizante foliar' && wantsFlowering){
+      const flowerMatches = candidates.filter(p=> FLOWER_WORDS.some(w=>stripAccents(p.name.toLowerCase()).includes(stripAccents(w))) );
+      if (flowerMatches.length) candidates = flowerMatches;
+    }
+    candidates = candidates
+      .filter(p=>!pool.some(x=>x.name===p.name))
+      .sort((a,b)=> (b.stock>0)-(a.stock>0) || b.stock-a.stock);
+    pool = pool.concat(candidates.slice(0, pool.length ? 1 : 2));
+  });
+
+  pool = pool.slice(0,3);
+
+  const topCat = directHits.length ? (directHits[0].cat) : rankedCats[0];
+  const intro = {
+    'Herbicida': "Para controlar la maleza en tu terreno, esto es lo que tenemos disponible:",
+    'Fungicida': "Por lo que describes suena a un problema de hongos. Te recomiendo esto:",
+    'Insecticida/Acaricida': "Para controlar esa plaga, estos productos te van a ayudar:",
+    'Fertilizante foliar': wantsFlowering ? "Para reforzar la floración y el engrose del fruto, te recomiendo:" : "Tu planta necesita un empujón de nutrientes. Te recomiendo:",
+    'Corrector de pH': "Para corregir el pH y mejorar la absorción de nutrientes, prueba con:",
+    'Semilla': "Para tu siembra, tenemos disponible:",
+    'Abono granulado': "Para nutrición de fondo en el suelo, te recomiendo:",
+    'Coadyuvante': "Para mejorar la adherencia de tus aplicaciones, usa:",
+    'Equipo y accesorio': "Para tu aplicación necesitas este equipo:"
+  }[topCat] || "Según lo que describes, esto te puede servir:";
+
+  const recommendations = pool.map(p=>({
+    name: p.name,
+    reason: CATEGORY_REASON[p.cat] || 'Producto recomendado según tu consulta.'
+  }));
+
+  return { reply: intro, recommendations };
+}
+
+function handleSend(){
+  const text = chatInput.value.trim();
+  if (!text) return;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+  addUserMsg(text);
+  addTypingIndicator();
+  setTimeout(()=>{
+    const result = analyzeQuery(text);
+    removeTypingIndicator();
+    addBotMsg(result.reply, result.recommendations);
+    if (result.showClarify) addClarifyChips(CLARIFY_OPTIONS);
+    sendBtn.disabled = false;
+  }, 500);
+}
+
+sendBtn.onclick = handleSend;
+chatInput.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    handleSend();
+  }
+});
+chatInput.addEventListener('input', ()=>{
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+
+document.querySelectorAll('.qp').forEach(btn=>{
+  btn.onclick = ()=>{ chatInput.value = btn.dataset.q; handleSend(); };
+});
+
+addBotMsg("¡Hola! 👋 Soy el asesor virtual de Agro Naranjito. Cuéntame qué le está pasando a tu cultivo — hojas manchadas, plagas, malezas, planta débil — y te recomiendo el producto ideal de nuestro inventario.", []);
 </script>
 </body>
 </html>
