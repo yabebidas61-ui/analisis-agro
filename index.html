@@ -753,7 +753,11 @@ const searchBox = document.getElementById('search-box');
 const filterCat = document.getElementById('filter-cat');
 const catCount = document.getElementById('cat-count');
 
-const cats = ['Todas las categorías', ...Array.from(new Set(PRODUCTS.map(p=>p.cat))).sort()];
+// Solo se listan en categorías/filtro los productos que sí tienen imagen,
+// para que el selector de categorías no muestre categorías vacías en el catálogo.
+const CATALOG_PRODUCTS = PRODUCTS.filter(p => !!p.img);
+
+const cats = ['Todas las categorías', ...Array.from(new Set(CATALOG_PRODUCTS.map(p=>p.cat))).sort()];
 filterCat.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
 
 function stockInfo(p){
@@ -765,7 +769,10 @@ function stockInfo(p){
 function renderCatalog(){
   const q = searchBox.value.trim().toLowerCase();
   const cat = filterCat.value;
-  const list = PRODUCTS.filter(p=>{
+  // El catálogo visual solo muestra productos con imagen.
+  // Los productos sin imagen siguen existiendo en PRODUCTS y pueden
+  // ser recomendados normalmente por el asesor IA en el chat.
+  const list = CATALOG_PRODUCTS.filter(p=>{
     const matchQ = !q || p.name.toLowerCase().includes(q) || p.company.toLowerCase().includes(q);
     const matchC = cat === 'Todas las categorías' || p.cat === cat;
     return matchQ && matchC;
@@ -780,9 +787,7 @@ function renderCatalog(){
   grid.innerHTML = list.map(p=>{
     const st = stockInfo(p);
     const disabled = p.stock === 0 ? 'disabled' : '';
-    const photoInner = p.img
-      ? `<img src="${p.img}" alt="${p.name}" loading="lazy">`
-      : `<span>${CAT_ICON[p.cat]||'🌿'}</span>`;
+    const photoInner = `<img src="${p.img}" alt="${p.name}" loading="lazy">`;
     return `
     <div class="product-card" data-id="${p.id}" style="cursor:pointer;">
       <div class="product-photo">
@@ -1037,6 +1042,9 @@ function addBotMsg(text, recs){
     const recWrap = document.createElement('div');
     recWrap.className = 'rec-cards';
     recs.forEach(r=>{
+      // El asesor IA busca en TODOS los productos (PRODUCTS), no solo en
+      // los que tienen imagen, así que aquí pueden seguir apareciendo
+      // productos sin foto.
       const p = PRODUCTS.find(pp => pp.name === r.name);
       if (!p) return;
       const card = document.createElement('div');
